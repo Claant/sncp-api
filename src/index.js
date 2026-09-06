@@ -1,81 +1,111 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import helmet from 'helmet'; // [Seguridad] Inyección de cabeceras HTTP robustas
+import helmet from 'helmet';
 
-import { connectDB } from './config/db.js';
+// Conexiones concurrentes del Pool optimizado
+import { connectDB, connectDemoDB } from './config/db.js'; 
+// Enrutadores de la API (Alineados con los nombres reales de tus archivos físicos)
 import authRoutes from './routes/authRoutes.js'; 
 import usuarioRoutes from './routes/usuarioRoutes.js';
 import pacienteRoutes from './routes/pacienteRoutes.js'; 
-import atencionRoutes from './routes/atencionRoutes.js';
+import atencionRoutes from './routes/atencionRoutes.js'; // 🚀 Singular: atencionRoutes
 import centroSaludRoutes from './routes/centroSaludRoutes.js'; 
 import diagnosticoRoutes from './routes/diagnosticoRoutes.js';
 import direccionRoutes from './routes/direccionRoutes.js';
+import expedienteRoutes from './routes/expedienteRoutes.js';
+
 
 dotenv.config();
 
-// Inicializar la conexión inyectando el pool optimizado empresarial de MongoDB
-connectDB();
-
 const app = express();
 
-// ====================================================================
-// 🛡️ CAPA PERIMETRAL DE SEGURIDAD GLOBAL (OWASP / INFRAESTRUCTURA)
-// ====================================================================
-
-// 1. Ocultar huellas de Express y blindar cabeceras HTTP contra XSS y Clickjacking
+// 🔒 Seguridad perimetral global (Inyección de cabeceras HTTP seguras)
 app.use(helmet());
 
 // ====================================================================
-// CONFIGURACIÓN DE CORS PERSONALIZADA Y SEGURA (Políticas de Red)
+// CONFIGURACIÓN DE POLÍTICAS CORS (CONTROL DE ACCESO DE RED)
 // ====================================================================
 const origenesPermitidos = [
-  process.env.ORIGIN1, // http://localhost:5000
-  process.env.ORIGIN2, // http://localhost:5173 (Vite Vue Frontend)
-  process.env.ORIGIN3, // Producción API (Render)
-  process.env.ORIGIN4  // Producción Client (Netlify)
-].filter(Boolean); 
+  process.env.ORIGIN1,
+  process.env.ORIGIN2,
+  process.env.ORIGIN3,
+  process.env.ORIGIN4
+].filter(Boolean).map(o => o.trim()); // 🚀 Sanitización perimetral de strings de entorno
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Permitir Postman o microservicios locales
+    // Permitir peticiones sin origen (como herramientas de desarrollo, Postman o SSR local)
+    if (!origin) return callback(null, true);
     
     if (origenesPermitidos.indexOf(origin) !== -1) {
-      callback(null, true);
+      return callback(null, true);
     } else {
-      callback(new Error('Bloqueado por políticas de seguridad CORS del Sistema Nacional Clínico'));
+      console.warn(`🛑 Intento de acceso bloqueado por CORS desde el origen: ${origin}`);
+      return callback(new Error('Bloqueado por políticas de seguridad perimetral (CORS)'));
     }
   },
-  credentials: true, 
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware intermedio para el parseo estricto del cuerpo JSON
+// Parser estricto para objetos JSON entrantes (Protege el parser del Backend)
 app.use(express.json());
 
 // ====================================================================
-// ENRUTADORES GENERALES DE LA ARQUITECTURA REST
+// MONTAJE DE LAS RUTAS MAESTRAS DE LA API
 // ====================================================================
-app.use('/api/auth', authRoutes); // Conserva de forma interna su respectivo loginLimiter
+app.use('/api/auth', authRoutes); 
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/pacientes', pacienteRoutes); 
 app.use('/api/atenciones', atencionRoutes); 
 app.use('/api/centros-salud', centroSaludRoutes); 
 app.use('/api/diagnosticos', diagnosticoRoutes);
 app.use('/api/direcciones', direccionRoutes); 
+app.use('/api/expedientes', expedienteRoutes);
 
-// Endpoint base utilitario de salud del servicio (Health Check)
+// Endpoint de verificación de salud de la infraestructura de red (Health Check)
 app.get('/', (req, res) => {
-  return res.status(200).send('API del Sistema Nacional Clínico de Pacientes activa y operativa.');
+  return res.status(200).send('API del Sistema Web de Interoperabilidad de Ficha Clínica - SNCP Activa');
 });
 
-// [CIBERSEGURIDAD CRÍTICA] Capturador global de errores síncronos/asíncronos (Evita fugas de Stack Traces)
+// ====================================================================
+// CAPTURADOR GLOBAL DE ERRORES (BLINDAJE CONTRA CAÍDAS 500)
+// ====================================================================
 app.use((err, req, res, next) => {
-  console.error('❌ Excepción global detectada en Express:', err.message);
-  return res.status(500).json({ msg: 'Ocurrió un conflicto de procesamiento en la pasarela nacional de salud.' });
+  console.error('❌ EXCEPCIÓN DETECTADA EN EL HILO PRINCIPAL DE EXPRESS:', err.stack);
+  return res.status(500).json({ 
+    error: "InternalServerError",
+    msg: 'Ocurrió un conflicto de procesamiento en la pasarela nacional de salud.',
+    detalleParaElDesarrollador: err.message 
+  });
 });
 
-// Puerto dinámico adaptativo para entornos PaaS de producción
+// ====================================================================
+// ARRANQUE SECUENCIAL SÍNCRONO CON LOS CLÚSTERES DE ATLAS
+// ====================================================================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Servidor corporativo corriendo exitosamente en el puerto ${PORT}`));
+
+const arrancarServidorAsistencial = async () => {
+  try {
+    console.log('🔄 Iniciando secuencia de enlace con repositorios externos en Atlas...');
+    
+    // Inicializar pool de producción
+    await connectDB();
+    
+    // Inicializar repositorio demo de interoperabilidad de forma paralela
+    await connectDemoDB();
+    
+    // Una vez que los clústeres devuelven la promesa exitosa, abrimos el puerto de Express
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor asistencial corriendo exitosamente en el puerto ${PORT}`);
+      console.log(`📡 Esperando peticiones concurrentes del cliente de Vue...`);
+    });
+  } catch (error) {
+    console.error('❌ Error catastrófico insalvable en la secuencia de arranque:', error.message);
+    process.exit(1); // El proceso muere limpiamente para que el orquestador (PM2/Docker) lo reincie
+  }
+};
+
+arrancarServidorAsistencial();

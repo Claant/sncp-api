@@ -1,11 +1,14 @@
 import express from 'express';
 import { crearDiagnostico, obtenerDiagnosticoPorAtencion } from '../controllers/diagnosticoController.js';
-import { verificarToken } from '../midlewares/authMidleware.js';
-import { permitirRoles } from '../midlewares/rolMidleware.js';
+
+
+// 🟢 Corrección estricta de middleware: usamos verificarToken y permitirRoles
+import { verificarToken } from '../middlewares/authMiddleware.js';
+import { permitirRoles } from '../middlewares/rolMiddleware.js';
 
 const router = express.Router();
 
-// PRIVACIDAD MÁXIMA: Solo el rol médico gestiona diagnósticos de salud
+// Privacidad máxima: Solo el rol médico gestiona diagnósticos de salud
 router.post('/', verificarToken, permitirRoles('medico'), crearDiagnostico);
 router.get('/atencion/:atencionId', verificarToken, permitirRoles('medico'), obtenerDiagnosticoPorAtencion);
 

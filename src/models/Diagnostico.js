@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
-const diagnosticoSchema = new mongoose.Schema({
+// 🔹 EXPORTACIÓN EXPLÍCITA DEL ESQUEMA (Para inyección y población dinámica en pools concurrentes)
+export const diagnosticoSchema = new mongoose.Schema({
     atencion_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'AtencionMedica', // Vinculación con el modelo de atencionmedicas
@@ -19,10 +20,15 @@ const diagnosticoSchema = new mongoose.Schema({
     }
 }, {
     // Registra automáticamente createdAt y updatedAt para auditoría cronológica del alta
-    timestamps: true 
+    timestamps: true,
+    versionKey: false // Remueve el campo __v interno de Mongoose para tus paquetes unificados
 });
 
-// CORREGIDO: Se cambia 'diagnostico' por 'diagnosticos' para coincidir exactamente con el nombre de tu colección física en plural dentro de Atlas
-const Diagnostico = mongoose.model('Diagnostico', diagnosticoSchema, 'diagnosticos');
+// 🚀 ADICIÓN CRÍTICA: Índice físico en Atlas para resolver búsquedas en cascada por ID de atención
+diagnosticoSchema.index({ atencion_id: 1 });
 
+// Verificación condicional para evitar colisiones durante el desarrollo en caliente (Nodemon)
+const Diagnostico = mongoose.models.Diagnostico || mongoose.model('Diagnostico', diagnosticoSchema, 'diagnosticos');
+
+// 🔹 EXPORTACIÓN POR DEFECTO DEL MODELO UNIFICADO PARA EL CANAL TRADICIONAL
 export default Diagnostico;

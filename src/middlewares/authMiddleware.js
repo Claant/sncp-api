@@ -16,10 +16,15 @@ export const verificarToken = (req, res, next) => {
     const decodificado = jwt.verify(token, process.env.JWT_SECRET);
 
     // 4. SISTEMA DE COMPATIBILIDAD DOBLE (Evita quiebres 500 en tus controladores)
-    // Nos aseguramos de que req.usuario responda tanto a .id como a ._id de forma transparente
-    req.usuario = {
+    // Nos aseguramos de que req.user y req.usuario respondan transparentemente a todo el ecosistema
+    req.user = {
       ...decodificado,
       _id: decodificado.id || decodificado._id // Mapeo cruzado de seguridad
+    };
+
+    req.usuario = {
+      ...decodificado,
+      _id: decodificado.id || decodificado._id // Duplicación de contingencia para controladores antiguos
     };
 
     // 5. Dar paso al siguiente eslabón de la ruta (permitirRoles o controlador final)

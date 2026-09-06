@@ -1,8 +1,11 @@
 import express from 'express';
-const router = express.Router();
 import { crearPaciente, obtenerPacientePorRut } from '../controllers/pacienteController.js';
-import { verificarToken } from '../midlewares/authMidleware.js';
-import { permitirRoles } from '../midlewares/rolMidleware.js';
+
+// 🟢 CORRECCIÓN ESTRICTA DE ENLACE ESM: Cambiado de checkAuth a { verificarToken }
+import { verificarToken } from '../middlewares/authMiddleware.js';
+import { permitirRoles } from '../middlewares/rolMiddleware.js';
+
+const router = express.Router();
 
 // Rutas protegidas para el módulo de pacientes
 router.post('/', verificarToken, permitirRoles('administrador', 'medico'), crearPaciente);

@@ -6,8 +6,8 @@ import {
     editarUsuarioMedico, 
     eliminarUsuarioDefinitivo 
 } from '../controllers/usuarioController.js';
-import { verificarToken } from '../midlewares/authMidleware.js';
-import { permitirRoles } from '../midlewares/rolMidleware.js'; 
+import { verificarToken } from '../middlewares/authMiddleware.js';
+import { permitirRoles } from '../middlewares/rolMiddleware.js'; 
 
 const router = express.Router();
 
