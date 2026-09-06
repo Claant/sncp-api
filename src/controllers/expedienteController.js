@@ -88,12 +88,15 @@ export const obtenerExpedientePorPaciente = async (req, res) => {
       .populate("usuario_id", "nombre rol")
       .populate("atencion_id", "motivo_consulta fecha");
 
+   /*   
     return res.json({
       paciente: expediente.paciente_id,
       atenciones,
       diagnosticos,
       bitacora
     });
+  */
+
 
   } catch (error) {
     console.error("❌ Error al obtener expediente local:", error.message);

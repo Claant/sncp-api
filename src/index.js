@@ -14,6 +14,7 @@ import centroSaludRoutes from './routes/centroSaludRoutes.js';
 import diagnosticoRoutes from './routes/diagnosticoRoutes.js';
 import direccionRoutes from './routes/direccionRoutes.js';
 import expedienteRoutes from './routes/expedienteRoutes.js';
+import bitacoraRoutes from './routes/bitacoraRoutes.js'; // 🔒 Auditoría forense
 
 
 dotenv.config();
@@ -64,7 +65,7 @@ app.use('/api/centros-salud', centroSaludRoutes);
 app.use('/api/diagnosticos', diagnosticoRoutes);
 app.use('/api/direcciones', direccionRoutes); 
 app.use('/api/expedientes', expedienteRoutes);
-
+app.use('/api/bitacora', bitacoraRoutes); // 🔒 Auditoría forense
 // Endpoint de verificación de salud de la infraestructura de red (Health Check)
 app.get('/', (req, res) => {
   return res.status(200).send('API del Sistema Web de Interoperabilidad de Ficha Clínica - SNCP Activa');

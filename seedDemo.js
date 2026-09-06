@@ -49,49 +49,29 @@ const runSeed = async () => {
 
     // 3. Insertar una nómina con RUTs, nombres y fechas de nacimiento totalmente NUEVOS
     const pacientes = await Paciente.insertMany([
-      {
-        rut: '16432915-7', 
-        nombre: 'Carolina Andrea Espinoza Muñoz',
-        fecha_nacimiento: '1986-11-04',
-        centro_salud_id: centro._id,
-        direccion_id: direcciones[0]._id
-      },
-      {
-        rut: '14210583-4',
-        nombre: 'Mauricio Alejandro Olivares Tapia',
-        fecha_nacimiento: '1972-05-18',
-        centro_salud_id: centro._id,
-        direccion_id: direcciones[1]._id
-      },
-      {
-        rut: '20155624-K',
-        nombre: 'Bastián Ignacio Contreras Araya',
-        fecha_nacimiento: '1999-09-25',
-        centro_salud_id: centro._id,
-        direccion_id: direcciones[2]._id
-      },
-      {
-        rut: '17590411-2',
-        nombre: 'Daniela Paz Villalobos Cortés',
-        fecha_nacimiento: '1991-03-12',
-        centro_salud_id: centro._id,
-        direccion_id: direcciones[3]._id
-      },
-      {
-        rut: '12948302-6',
-        nombre: 'Patricio Enrique Santander Véliz',
-        fecha_nacimiento: '1968-07-06',
-        centro_salud_id: centro._id,
-        direccion_id: direcciones[4]._id
-      },
-      {
-        rut: '19304855-3',
-        nombre: 'Natalia Belén Pizarro Aguilera',
-        fecha_nacimiento: '1996-12-21',
-        centro_salud_id: centro._id,
-        direccion_id: direcciones[5]._id
-      }
-    ]);
+  {
+    rut: '17845231-9',
+    nombre: 'Camila Fernanda Rojas Castillo',
+    fecha_nacimiento: new Date('1993-08-14'),
+    centro_salud_id: centro._id,
+    direccion_id: direcciones[0]._id
+  },
+  {
+    rut: '16590247-K',
+    nombre: 'Felipe Andrés González Herrera',
+    fecha_nacimiento: new Date('1985-02-27'),
+    centro_salud_id: centro._id,
+    direccion_id: direcciones[1]._id
+  },
+  {
+    rut: '21039485-5',
+    nombre: 'Valentina Sofía Ramírez Torres',
+    fecha_nacimiento: new Date('2001-11-09'),
+    centro_salud_id: centro._id,
+    direccion_id: direcciones[2]._id
+  }
+], { ordered: false });
+
 
     // 4. Diagnósticos clínicos realistas con códigos CIE-10 estrictos
     const diagnosticosBase = [

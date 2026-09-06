@@ -171,6 +171,7 @@ export const obtenerPacientePorRut = async (req, res) => {
       const idMedicoAutenticado = req.user?.id || req.user?._id || req.usuario?.id || req.usuario?._id;
 
       // Dejamos la huella forense OWASP activa en Atlas apuntando a la bitácora unificada
+      /*
       await registrarAccesoForense(
         idMedicoAutenticado,
         req.user?.nombre || req.usuario?.nombre || "Dra. Ana Martínez",
@@ -178,6 +179,8 @@ export const obtenerPacientePorRut = async (req, res) => {
         pacienteLocal._id,
         atenciones?.[0]?._id || null
       );
+      */
+
 
       // Despachamos el payload unificado limpio directo al Frontend en JSON estricto
       return res.status(200).json({

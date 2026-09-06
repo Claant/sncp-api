@@ -35,6 +35,7 @@ const getModelosProd = (connProd) => {
     return { AtencionMedicaProd, DiagnosticoProd, PacienteProd, DireccionProd, BitacoraAccesoProd };
 };
 
+
 // =========================================================================
 // Caso de Uso: Registrar una nueva consulta médica tradicional (CU-003)
 // =========================================================================
@@ -53,7 +54,7 @@ export const crearAtencion = async (req, res) => {
       return res.status(503).json({ error: "DbError", msg: "Base de datos desconectada temporalmente." });
     }
 
-    const { AtencionMedicaProd, DiagnosticoProd, BitacoraAccesoProd } = getModelosProd(connProd);
+    const { AtencionMedicaProd, DiagnosticoProd } = getModelosProd(connProd);
 
     // Resolver identidad del médico firmante de manera tolerante
     const idMedicoAutenticado = req.usuario?._id || req.user?._id || req.usuario?.id || req.user?.id || null;
@@ -81,17 +82,8 @@ export const crearAtencion = async (req, res) => {
     nuevaAtencion.diagnostico_id = nuevoDiagnostico._id;
     await nuevaAtencion.save();
 
-    // 🚀 CORRECCIÓN CRÍTICA OWASP: Inyectamos los strings sanitizados requeridos por el esquema unificado
-    await BitacoraAccesoProd.create({
-      paciente_id: new mongoose.Types.ObjectId(paciente_id),
-      usuario_id: new mongoose.Types.ObjectId(idMedicoAutenticado),
-      nombre_medico: req.user?.nombre || req.usuario?.nombre || "Especialista de Turno", // Evita el ValidationError
-      rol_consultado: req.usuario?.rol || req.user?.rol || "medico",
-      atencion_id: nuevaAtencion._id,
-      fecha_consulta: new Date()
-    });
-
-    console.log('🔒 Log de auditoría OWASP unificado registrado exitosamente en Atlas.');
+    // 🟢 ARQUITECTURA DESACOPLADA: Se remueve la inserción síncrona redundante de BitacoraAccesoProd.
+    // La responsabilidad de la auditoría ahora recae al 100% en el controlador dedicado 'bitacoraController.js'.
 
     return res.status(201).json({
       msg: "Atención médica tradicional y diagnóstico CIE-10 registrados exitosamente en Atlas.",
@@ -108,6 +100,13 @@ export const crearAtencion = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+
+
 // =========================================================================
 // Caso de Uso: Obtener el historial de consultas de un paciente específico
 // =========================================================================
@@ -160,7 +159,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
     try {
         session.startTransaction(); 
 
-        const { PacienteProd, DireccionProd, AtencionMedicaProd, DiagnosticoProd, BitacoraAccesoProd } = getModelosProd(connProd);
+        const { PacienteProd, DireccionProd, AtencionMedicaProd, DiagnosticoProd } = getModelosProd(connProd);
         const rutSanitizado = limpiarRut(rut);
 
         const pacienteExiste = await PacienteProd.findOne({ rut: rutSanitizado }).session(session);
@@ -200,16 +199,6 @@ export const crearAtencionFichaNueva = async (req, res) => {
         });
         await DiagnosticoProd.create([nuevoDiagnostico], { session });
 
-        // 🚀 REGISTRO FORENSE EN TRANSACCIÓN: Inyectamos auditoría unificada dentro de la sesión ACID
-        await BitacoraAccesoProd.create([{
-            paciente_id: pacienteGuardado._id,
-            usuario_id: new mongoose.Types.ObjectId(usuario_id),
-            nombre_medico: req.user?.nombre || req.usuario?.nombre || "Especialista de Turno",
-            rol_consultado: req.user?.rol || req.usuario?.rol || "medico",
-            atencion_id: atencionGuardada._id,
-            fecha_consulta: new Date()
-        }], { session });
-
         await session.commitTransaction();  
         session.endSession();
 
@@ -229,7 +218,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
                 try { await session.abortTransaction(); } catch (e) {}
                 session.endSession();
 
-                const { PacienteProd, DireccionProd, AtencionMedicaProd, DiagnosticoProd, BitacoraAccesoProd } = getModelosProd(connProd);
+                const { PacienteProd, DireccionProd, AtencionMedicaProd, DiagnosticoProd } = getModelosProd(connProd);
                 const rutSanitizado = limpiarRut(rut);
 
                 const pacienteExisteNormal = await PacienteProd.findOne({ rut: rutSanitizado });
@@ -263,17 +252,8 @@ export const crearAtencionFichaNueva = async (req, res) => {
                     descripcion
                 });
 
-                // Inyección forense resiliente local
-                await BitacoraAccesoProd.create({
-                    paciente_id: pacNormal._id,
-                    usuario_id: new mongoose.Types.ObjectId(usuario_id),
-                    nombre_medico: req.user?.nombre || req.usuario?.nombre || "Especialista de Turno",
-                    rol_consultado: req.user?.rol || req.usuario?.rol || "medico",
-                    atencion_id: atenNormal._id,
-                    fecha_consulta: new Date()
-                });
+               console.log('🚀 Contingencia local completada exitosamente en el Pool activo.');
 
-                console.log('🚀 Contingencia local completada exitosamente en el Pool activo.');
                 return res.status(201).json({
                     msg: 'Expediente clínico registrado exitosamente (Modo Resiliente Local).',
                     paciente_id: pacNormal._id,
