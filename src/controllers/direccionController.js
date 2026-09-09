@@ -1,6 +1,6 @@
 // controllers/direccionController.js
 import mongoose from 'mongoose';
-import * as dbConfig from '../config/db.js'; // 🚀 CORRECCIÓN: Uso del getter dinámico de ESM
+import * as dbConfig from '../config/db.js'; // CORRECCIÓN: Uso del getter dinámico de ESM
 import Direccion from '../models/Direccion.js'; // Importamos para extraer su .schema nativo
 
 // ====================================================================
@@ -19,11 +19,11 @@ export const crearDireccion = async (req, res) => {
     }
 
     try {
-        // 🚀 CORRECCIÓN: Extraemos el pool de conexiones en caliente
+        // CORRECCIÓN: Extraemos el pool de conexiones en caliente
         const connProd = dbConfig.getConnProd();
 
         if (!connProd) {
-            console.error("❌ Error: El pool de conexiones connProd no está inicializado en direccionController.");
+            console.error("⚠️ Error: El pool de conexiones connProd no está inicializado en direccionController.");
             return res.status(503).json({ msg: "Base de datos desconectada temporalmente." });
         }
 
@@ -42,7 +42,7 @@ export const crearDireccion = async (req, res) => {
         return res.status(201).json({ msg: 'Dirección registrada con éxito.', direccion: nuevaDireccion });
 
     } catch (error) {
-        console.error('❌ Error al registrar dirección:', error.stack);
+        console.error('⚠️ Error al registrar dirección:', error.stack);
         return res.status(500).json({ msg: 'Error interno del servidor al procesar la dirección.' });
     }
 };
@@ -54,11 +54,11 @@ export const obtenerDireccionPorId = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // 🚀 CORRECCIÓN: Extraemos el pool de conexiones en caliente
+        // CORRECCIÓN: Extraemos el pool de conexiones en caliente
         const connProd = dbConfig.getConnProd();
 
         if (!connProd) {
-            console.error("❌ Error: El pool de conexiones connProd no está inicializado en direccionController.");
+            console.error("⚠️ Error: El pool de conexiones connProd no está inicializado en direccionController.");
             return res.status(503).json({ msg: "Base de datos desconectada temporalmente." });
         }
 
@@ -72,7 +72,7 @@ export const obtenerDireccionPorId = async (req, res) => {
         // CORREGIDO: Retorno limpio del objeto hacia el cliente de Vue
         return res.json(direccion);
     } catch (error) {
-        console.error('❌ Error al obtener dirección:', error.message);
+        console.error('⚠️ Error al obtener dirección:', error.message);
         return res.status(500).json({ msg: 'Error al cargar los datos de la dirección.' });
     }
 };

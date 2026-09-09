@@ -9,19 +9,19 @@ import { connectDB, connectDemoDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js'; 
 import usuarioRoutes from './routes/usuarioRoutes.js';
 import pacienteRoutes from './routes/pacienteRoutes.js'; 
-import atencionRoutes from './routes/atencionRoutes.js'; // 🚀 Singular: atencionRoutes
+import atencionRoutes from './routes/atencionRoutes.js'; // Singular: atencionRoutes
 import centroSaludRoutes from './routes/centroSaludRoutes.js'; 
 import diagnosticoRoutes from './routes/diagnosticoRoutes.js';
 import direccionRoutes from './routes/direccionRoutes.js';
 import expedienteRoutes from './routes/expedienteRoutes.js';
-import bitacoraRoutes from './routes/bitacoraRoutes.js'; // 🔒 Auditoría forense
+import bitacoraRoutes from './routes/bitacoraRoutes.js'; // Auditoría forense
 
 
 dotenv.config();
 
 const app = express();
 
-// 🔒 Seguridad perimetral global (Inyección de cabeceras HTTP seguras)
+// Seguridad perimetral global (Inyección de cabeceras HTTP seguras)
 app.use(helmet());
 
 // ====================================================================
@@ -42,7 +42,7 @@ app.use(cors({
     if (origenesPermitidos.indexOf(origin) !== -1) {
       return callback(null, true);
     } else {
-      console.warn(`🛑 Intento de acceso bloqueado por CORS desde el origen: ${origin}`);
+      console.warn(`⚠️ Intento de acceso bloqueado por CORS desde el origen: ${origin}`);
       return callback(new Error('Bloqueado por políticas de seguridad perimetral (CORS)'));
     }
   },
@@ -65,7 +65,7 @@ app.use('/api/centros-salud', centroSaludRoutes);
 app.use('/api/diagnosticos', diagnosticoRoutes);
 app.use('/api/direcciones', direccionRoutes); 
 app.use('/api/expedientes', expedienteRoutes);
-app.use('/api/bitacora', bitacoraRoutes); // 🔒 Auditoría forense
+app.use('/api/bitacora', bitacoraRoutes); // Auditoría forense
 // Endpoint de verificación de salud de la infraestructura de red (Health Check)
 app.get('/', (req, res) => {
   return res.status(200).send('API del Sistema Web de Interoperabilidad de Ficha Clínica - SNCP Activa');
@@ -75,10 +75,10 @@ app.get('/', (req, res) => {
 // CAPTURADOR GLOBAL DE ERRORES (BLINDAJE CONTRA CAÍDAS 500)
 // ====================================================================
 app.use((err, req, res, next) => {
-  console.error('❌ EXCEPCIÓN DETECTADA EN EL HILO PRINCIPAL DE EXPRESS:', err.stack);
+  console.error('⚠️ EXCEPCIÓN DETECTADA EN EL HILO PRINCIPAL DE EXPRESS:', err.stack);
   return res.status(500).json({ 
     error: "InternalServerError",
-    msg: 'Ocurrió un conflicto de procesamiento en la pasarela nacional de salud.',
+    msg: 'Ocurrió un conflicto de procesamiento en el servidor.',
     detalleParaElDesarrollador: err.message 
   });
 });
@@ -86,7 +86,7 @@ app.use((err, req, res, next) => {
 // ====================================================================
 // ARRANQUE SECUENCIAL SÍNCRONO CON LOS CLÚSTERES DE ATLAS
 // ====================================================================
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4002;
 
 const arrancarServidorAsistencial = async () => {
   try {
@@ -99,12 +99,13 @@ const arrancarServidorAsistencial = async () => {
     await connectDemoDB();
     
     // Una vez que los clústeres devuelven la promesa exitosa, abrimos el puerto de Express
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor asistencial corriendo exitosamente en el puerto ${PORT}`);
-      console.log(`📡 Esperando peticiones concurrentes del cliente de Vue...`);
+    
+    app.listen(PORT, '127.0.0.1', () => {
+      console.log(`Servidor asistencial corriendo exitosamente en el puerto ${PORT}`);
+      console.log(`Esperando peticiones del cliente de Vue...`);
     });
   } catch (error) {
-    console.error('❌ Error catastrófico insalvable en la secuencia de arranque:', error.message);
+    console.error('⚠️ Error en la secuencia de arranque:', error.message);
     process.exit(1); // El proceso muere limpiamente para que el orquestador (PM2/Docker) lo reincie
   }
 };

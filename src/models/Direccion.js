@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// 🔹 EXPORTACIÓN EXPLÍCITA DEL ESQUEMA (Para inyección y población dinámica en pools concurrentes)
+// EXPORTACIÓN EXPLÍCITA DEL ESQUEMA (Para inyección y población dinámica en pools concurrentes)
 export const direccionSchema = new mongoose.Schema({
     calle: {
         type: String,
@@ -27,11 +27,11 @@ export const direccionSchema = new mongoose.Schema({
     versionKey: false // Remueve el campo __v interno de Mongoose para tus paquetes unificados
 });
 
-// 🚀 ADICIÓN CRÍTICA: Índice compuesto físico en Atlas para optimizar búsquedas masivas y ordenamiento geográfico
+// ADICIÓN CRÍTICA: Índice compuesto físico en Atlas para optimizar búsquedas masivas y ordenamiento geográfico
 direccionSchema.index({ comuna: 1, ciudad: 1 });
 
 // Verificación condicional para evitar OverwriteModelError durante el desarrollo en caliente
 const Direccion = mongoose.models.Direccion || mongoose.model('Direccion', direccionSchema, 'direcciones');
 
-// 🔹 EXPORTACIÓN POR DEFECTO DEL MODELO TRADICIONAL
+// EXPORTACIÓN POR DEFECTO DEL MODELO TRADICIONAL
 export default Direccion;

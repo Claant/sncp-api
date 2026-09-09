@@ -1,6 +1,6 @@
 // controllers/pacienteController.js
 import mongoose from "mongoose";
-import * as dbConfig from "../config/db.js"; // 🚀 CORRECCIÓN: Uso de getters dinámicos de ESM
+import * as dbConfig from "../config/db.js"; // CORRECCIÓN: Uso de getters dinámicos de ESM
 
 // IMPORTACIÓN ÚNICA DE ESQUEMAS CLÍNICOS: Previene el colapso del ModuleLoader en ESM
 import { pacienteSchema } from "../models/Paciente.js";
@@ -102,7 +102,7 @@ export const crearPaciente = async (req, res) => {
     }
 };
 // ====================================================================
-// 🔹 CASO DE USO INTEROPERABLE TOTALMENTE BLINDADO Y SINCRONIZADO
+// CASO DE USO INTEROPERABLE TOTALMENTE BLINDADO Y SINCRONIZADO
 // GET /api/pacientes/:rut
 // ====================================================================
 export const obtenerPacientePorRut = async (req, res) => {
@@ -124,14 +124,14 @@ export const obtenerPacientePorRut = async (req, res) => {
     if (!connProd.models.AtencionMedica) connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
     if (!connProd.models.Diagnostico) connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
     
-    // 🚀 REEMPLAZO: Registramos únicamente BitacoraAcceso en el pool en lugar de la antigua Auditoria
+    // REEMPLAZO: Registramos únicamente BitacoraAcceso en el pool en lugar de la antigua Auditoria
     if (!connProd.models.BitacoraAcceso) connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
 
     const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
     const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
     const DiagnosticoProd = connProd.models.Diagnostico || connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
     
-    // 🚀 REEMPLAZO: Instanciamos el modelo unificado correcto de bitácora
+    // REEMPLAZO: Instanciamos el modelo unificado correcto de bitácora
     const BitacoraProd = connProd.models.BitacoraAcceso || connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
 
     // Paso A: Buscar paciente en base local (Captura de pacientes)
@@ -156,7 +156,7 @@ export const obtenerPacientePorRut = async (req, res) => {
         atencion_id: { $in: atenciones.map(a => a._id) }
       }).lean();
 
-      // 🚀 REEMPLAZO: Interrogamos directamente a la colección real unificada 'bitacora-accesos'
+      // REEMPLAZO: Interrogamos directamente a la colección real unificada 'bitacora-accesos'
       const bitacoraRaw = await BitacoraProd.find({ paciente_id: pacienteLocal._id })
         .sort({ fecha_consulta: -1 })
         .lean();
@@ -170,18 +170,7 @@ export const obtenerPacientePorRut = async (req, res) => {
       // Capturar ID del médico autenticado de manera tolerante a req.user o req.usuario
       const idMedicoAutenticado = req.user?.id || req.user?._id || req.usuario?.id || req.usuario?._id;
 
-      // Dejamos la huella forense OWASP activa en Atlas apuntando a la bitácora unificada
-      /*
-      await registrarAccesoForense(
-        idMedicoAutenticado,
-        req.user?.nombre || req.usuario?.nombre || "Dra. Ana Martínez",
-        req.user?.rol || req.usuario?.rol || "medico",
-        pacienteLocal._id,
-        atenciones?.[0]?._id || null
-      );
-      */
-
-
+   
       // Despachamos el payload unificado limpio directo al Frontend en JSON estricto
       return res.status(200).json({
         origen: "local",
@@ -199,7 +188,7 @@ export const obtenerPacientePorRut = async (req, res) => {
     if (!connDemo) {
       return res.status(404).json({
         origen: "local",
-        msg: "Paciente no encontrado localmente y la pasarela nacional de salud se encuentra caída.",
+        msg: "Paciente no encontrado en la base de datos de este centro de salud. No se pudo establecer conexión con el repositorio externo.",
         expediente: { atenciones: [], diagnosticos: [], bitacora: [] }
       });
     }
@@ -217,7 +206,7 @@ export const obtenerPacientePorRut = async (req, res) => {
 
     return res.status(200).json({
       origen: "externo",
-      msg: "El paciente no existe en los registros de este centro de salud, pero se detectó un expediente clínico disponible en el clúster remoto.",
+      msg: "El paciente no existe en los registros de este centro de salud, pero se detectó un expediente clínico disponible en la base de datos sistema-informacion-clinica-demo.",
       pacienteIdExterno: pacienteExterno._id,
       nombre: pacienteExterno.nombre,
       expediente: { atenciones: [], diagnosticos: [], bitacora: [] }
@@ -248,7 +237,7 @@ export const obtenerPacienteFHIR = async (req, res) => {
         if (!connProd.models.Direccion) connProd.model("Direccion", direccionSchema, "direcciones");
         if (!connProd.models.CentroSalud) connProd.model("CentroSalud", centroSaludSchema, "centro-salud");
         if (!connProd.models.Usuario) connProd.model("Usuario", usuarioSchema, "usuarios");
-        // 🚀 REEMPLAZO: Cambiamos la inyección condicional por la de bitácora
+        // REEMPLAZO: Cambiamos la inyección condicional por la de bitácora
         if (!connProd.models.BitacoraAcceso) connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
         
         const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
@@ -272,7 +261,7 @@ export const obtenerPacienteFHIR = async (req, res) => {
 
         return res.json(mapPacienteToFHIR(paciente));
     } catch (error) {
-        console.error('❌ Error al exportar paciente FHIR:', error.stack);
+        console.error('⚠️ Error al exportar paciente FHIR:', error.stack);
         return res.status(500).json({ error: "InternalServerError", msg: 'Error interno del servidor al exportar recurso FHIR.' });
     }
 };

@@ -5,7 +5,7 @@ import {
     crearAtencionFichaNueva
 } from '../controllers/atencionController.js';
 
-// 🔹 CORRECCIÓN ESTRICTA DE ENLACE ESM: Usamos la exportación nombrada con llaves { }
+// CORRECCIÓN ESTRICTA DE ENLACE ESM: Usamos la exportación nombrada con llaves { }
 import { verificarToken } from '../middlewares/authMiddleware.js'; 
 import { permitirRoles } from '../middlewares/rolMiddleware.js';
 

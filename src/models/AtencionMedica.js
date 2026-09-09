@@ -14,7 +14,7 @@ export const atencionMedicaSchema = new mongoose.Schema({
     },
     diagnostico_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Diagnostico', // 🚀 ADICIÓN: Mapeo explícito relacional para guardar el ID del diagnóstico CIE-10
+        ref: 'Diagnostico', // ADICIÓN: Mapeo explícito relacional para guardar el ID del diagnóstico CIE-10
         default: null
     },
     fecha: {

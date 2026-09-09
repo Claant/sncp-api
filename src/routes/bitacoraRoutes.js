@@ -5,7 +5,7 @@ import { verificarToken } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 
 // ====================================================================
-// 🔒 ENDPOINT DE AUDITORÍA FORENSE CENTRALIZADO E IDEMPOTENTE
+//  ENDPOINT DE AUDITORÍA FORENSE CENTRALIZADO E IDEMPOTENTE
 // ====================================================================
 // Fiel a tu arquitectura, forzamos la validación del token antes de registrar
 router.post('/registrar', verificarToken, registrarAcceso);

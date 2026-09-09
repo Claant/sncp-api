@@ -1,8 +1,8 @@
 // controllers/usuarioController.js
 import mongoose from 'mongoose'; 
-import * as dbConfig from '../config/db.js'; // 🚀 CORRECCIÓN: Uso de getters dinámicos de ESM
+import * as dbConfig from '../config/db.js'; // CORRECCIÓN: Uso de getters dinámicos de ESM
 
-// 🔹 IMPORTACIÓN EXCLUSIVA DE ESQUEMAS: Previene el colapso del ModuleLoader en ESM
+// IMPORTACIÓN EXCLUSIVA DE ESQUEMAS: Previene el colapso del ModuleLoader en ESM
 import { usuarioSchema } from '../models/Usuario.js';
 import { centroSaludSchema } from '../models/CentroSalud.js';
 
@@ -33,7 +33,7 @@ export const crearUsuario = async (req, res) => {
     }
 
     try {
-        // 🚀 CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
+        // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
             return res.status(503).json({ msg: "Base de datos de producción no disponible temporalmente." });
@@ -77,7 +77,7 @@ export const crearUsuario = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error al crear usuario:', error.message);
+        console.error('⚠️ Error al crear usuario:', error.message);
         return res.status(500).json({ msg: 'Error en el servidor al registrar el usuario.' });
     }
 };
@@ -88,7 +88,7 @@ export const crearUsuario = async (req, res) => {
 // ====================================================================
 export const obtenerUsuarios = async (req, res) => {
     try {
-        // 🚀 CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
+        // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
             return res.status(503).json({ msg: "Base de datos de producción no disponible." });
@@ -101,7 +101,7 @@ export const obtenerUsuarios = async (req, res) => {
             connProd.model('CentroSalud', centroSaludSchema, 'centro-salud');
         }
 
-        // 📊 Parámetros de paginación extraídos de la URL query string
+        // Parámetros de paginación extraídos de la URL query string
         const pagina = parseInt(req.query.page) || 1;
         const limite = parseInt(req.query.limit) || 10;
         const saltar = (pagina - 1) * limite;
@@ -129,7 +129,7 @@ export const obtenerUsuarios = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('❌ Error al obtener usuarios:', error.message);
+        console.error('⚠️ Error al obtener usuarios:', error.message);
         return res.status(500).json({ msg: 'Error al obtener la lista de usuarios.' });
     }
 };
@@ -145,7 +145,7 @@ export const actualizarEstadoUsuario = async (req, res) => {
     }
 
     try {
-        // 🚀 CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
+        // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
             return res.status(503).json({ msg: "Base de datos fuera de línea temporalmente." });
@@ -170,7 +170,7 @@ export const actualizarEstadoUsuario = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error al actualizar estado del usuario:', error.message);
+        console.error('⚠️ Error al actualizar estado del usuario:', error.message);
         return res.status(500).json({ msg: 'Error interno del servidor al procesar el cambio de estado.' });
     }
 };
@@ -191,7 +191,7 @@ export const editarUsuarioMedico = async (req, res) => {
     }
 
     try {
-        // 🚀 CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
+        // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
             return res.status(503).json({ msg: "Base de datos fuera de línea temporalmente." });
@@ -215,7 +215,7 @@ export const editarUsuarioMedico = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error al editar datos del médico:', error.message);
+        console.error('⚠️ Error al editar datos del médico:', error.message);
         return res.status(500).json({ msg: 'Error en el servidor al intentar modificar el perfil del especialista.' });
     }
 };
@@ -231,7 +231,7 @@ export const eliminarUsuarioDefinitivo = async (req, res) => {
     }
 
     try {
-        // 🚀 CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
+        // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
             return res.status(503).json({ msg: "Base de datos fuera de línea temporalmente." });
@@ -242,7 +242,7 @@ export const eliminarUsuarioDefinitivo = async (req, res) => {
         const usuarioEliminado = await UsuarioProd.findByIdAndDelete(id).lean();
 
         if (!usuarioEliminado) {
-            return res.status(404).json({ msg: 'El usuario que intenta remover no existe en el sistema nacional.' });
+            return res.status(404).json({ msg: 'El usuario que intenta remover no existe en la base de datos de este centro de salud.' });
         }
 
         return res.json({ 
@@ -250,7 +250,7 @@ export const eliminarUsuarioDefinitivo = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error al eliminar usuario de Atlas:', error.message);
+        console.error('⚠️ Error al eliminar usuario de Atlas:', error.message);
         return res.status(500).json({ msg: 'Error interno del servidor al procesar la baja física del registro.' });
     }
 };

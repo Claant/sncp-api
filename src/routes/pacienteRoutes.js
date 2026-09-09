@@ -1,7 +1,7 @@
 import express from 'express';
 import { crearPaciente, obtenerPacientePorRut } from '../controllers/pacienteController.js';
 
-// 🟢 CORRECCIÓN ESTRICTA DE ENLACE ESM: Cambiado de checkAuth a { verificarToken }
+// CORRECCIÓN ESTRICTA DE ENLACE ESM: Cambiado de checkAuth a { verificarToken }
 import { verificarToken } from '../middlewares/authMiddleware.js';
 import { permitirRoles } from '../middlewares/rolMiddleware.js';
 

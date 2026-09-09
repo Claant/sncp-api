@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import * as dbConfig from "../config/db.js"; // 🚀 CORRECCIÓN: Uso de getters dinámicos de ESM
+import * as dbConfig from "../config/db.js"; // CORRECCIÓN: Uso de getters dinámicos de ESM
 
 import { expedienteSchema } from "../models/Expediente.js";
 import { atencionMedicaSchema } from "../models/AtencionMedica.js";
@@ -23,7 +23,7 @@ const getModelosProd = (connProd) => {
 };
 
 // ====================================================================
-// 🔹 1. CASO DE USO: CREAR EXPEDIENTE TRADICIONAL
+// 1. CASO DE USO: CREAR EXPEDIENTE TRADICIONAL
 // ====================================================================
 export const crearExpediente = async (req, res) => {
   const { paciente_id, centro_salud_id } = req.body;
@@ -42,13 +42,13 @@ export const crearExpediente = async (req, res) => {
 
     return res.status(201).json({ msg: "Expediente creado exitosamente.", expediente: nuevoExpediente });
   } catch (error) {
-    console.error("❌ Error al crear expediente:", error.message);
+    console.error("⚠️ Error al crear expediente:", error.message);
     return res.status(500).json({ msg: "Error interno del servidor." });
   }
 };
 
 // ====================================================================
-// 🔹 2. CASO DE USO: OBTENER EXPEDIENTE POR PACIENTE
+// 2. CASO DE USO: OBTENER EXPEDIENTE POR PACIENTE
 // ====================================================================
 export const obtenerExpedientePorPaciente = async (req, res) => {
   const { pacienteId } = req.params;
@@ -88,24 +88,15 @@ export const obtenerExpedientePorPaciente = async (req, res) => {
       .populate("usuario_id", "nombre rol")
       .populate("atencion_id", "motivo_consulta fecha");
 
-   /*   
-    return res.json({
-      paciente: expediente.paciente_id,
-      atenciones,
-      diagnosticos,
-      bitacora
-    });
-  */
-
 
   } catch (error) {
-    console.error("❌ Error al obtener expediente local:", error.message);
+    console.error("⚠️ Error al obtener expediente local:", error.message);
     return res.status(500).json({ msg: "Error interno del servidor al procesar el historial." });
   }
 };
 
 // ====================================================================
-// 🔹 3. CASO DE USO: AGREGAR ATENCIÓN MÉDICA TRADICIONAL
+// 3. CASO DE USO: AGREGAR ATENCIÓN MÉDICA TRADICIONAL
 // ====================================================================
 export const agregarAtencion = async (req, res) => {
   const { expedienteId } = req.params;
@@ -148,12 +139,12 @@ export const agregarAtencion = async (req, res) => {
       expediente,
     });
   } catch (error) {
-    console.error("❌ Error al agregar atención:", error.message);
+    console.error("⚠️ Error al agregar atención:", error.message);
     return res.status(500).json({ msg: "Error interno del servidor." });
   }
 };
 // ====================================================================
-// 🔹 4. CASO DE USO: OBTENER EXPEDIENTE HÍBRIDO (PASARELA REMOTA)
+// 4. CASO DE USO: OBTENER EXPEDIENTE HÍBRIDO (PASARELA REMOTA)
 // ====================================================================
 export const obtenerExpedienteFHIR = async (req, res) => {
   try {
@@ -214,13 +205,13 @@ export const obtenerExpedienteFHIR = async (req, res) => {
 
     return res.status(404).json({ error: "El paciente no registra eventos médicos ni en local ni en DEMO." });
   } catch (error) {
-    console.error("❌ Error en pasarela FHIR:", error.message);
+    console.error("⚠️ Error en pasarela FHIR:", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
 
 // ====================================================================
-// 🌟 5. CASO DE USO ESENCIAL: IMPORTAR BUNDLE FHIR E INYECTAR EN PRODUCTION
+// 5. CASO DE USO ESENCIAL: IMPORTAR BUNDLE FHIR E INYECTAR EN PRODUCTION
 // ====================================================================
 export const crearAtencionFichaNueva = async (req, res) => {
   const fhirBundle = req.body;
@@ -232,7 +223,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
   const connProd = dbConfig.getConnProd();
   if (!connProd) return res.status(503).json({ msg: "Base de datos de producción no disponible." });
 
-  // 🚀 CORRECCIÓN: La sesión de transacciones debe nacer del pool activo
+  // CORRECCIÓN: La sesión de transacciones debe nacer del pool activo
   const session = await connProd.startSession();
   session.startTransaction();
 
@@ -317,7 +308,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
         await session.abortTransaction();
     }
     session.endSession();
-    console.error("❌ Fallo transaccional en la inyección de la pasarela FHIR:", error.message);
+    console.error("⚠️ Fallo transaccional en la inyección de la pasarela FHIR:", error.message);
     return res.status(500).json({ msg: "Error transaccional en la pasarela al persistir el expediente.", detalle: error.message });
   }
 };

@@ -24,7 +24,7 @@ export const diagnosticoSchema = new mongoose.Schema({
     versionKey: false // Remueve el campo __v interno de Mongoose para tus paquetes unificados
 });
 
-// 🚀 ADICIÓN CRÍTICA: Índice físico en Atlas para resolver búsquedas en cascada por ID de atención
+// ADICIÓN CRÍTICA: Índice físico en Atlas para resolver búsquedas en cascada por ID de atención
 diagnosticoSchema.index({ atencion_id: 1 });
 
 // Verificación condicional para evitar colisiones durante el desarrollo en caliente (Nodemon)

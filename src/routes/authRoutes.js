@@ -8,10 +8,10 @@ const router = express.Router();
 // CONFIGURACIÓN DEL MITIGADOR DE FUERZA BRUTA (RATE LIMITER)
 // ====================================================================
 const loginLimiter = rateLimit({
-  windowMs: 3 * 60 * 1000, // Ventana de tiempo de 3 minutos bloqueado
+  windowMs: 1 * 60 * 1000, // Ventana de tiempo de 1 minuto bloqueado
   max: 5, // Bloquea la IP tras 5 intentos fallidos consecutivos
   message: { 
-    msg: "Demasiados intentos de inicio de sesión fallidos. Por seguridad su IP ha sido bloqueada temporalmente por 3 minutos." 
+    msg: "Demasiados intentos de inicio de sesión fallidos. Por seguridad su IP ha sido bloqueada temporalmente por 1 minuto." 
   },
   standardHeaders: true, 
   legacyHeaders: false, 

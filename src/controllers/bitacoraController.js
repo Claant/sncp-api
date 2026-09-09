@@ -4,7 +4,7 @@ import { bitacoraSchema } from "../models/BitacoraAcceso.js";
 import { usuarioSchema } from "../models/Usuario.js";
 
 // ====================================================================
-// 🔒 CASO DE USO: REGISTRAR ACCESO FLUIDO E IDEMPOTENTE (OWASP / DEIS)
+// CASO DE USO: REGISTRAR ACCESO FLUIDO E IDEMPOTENTE (OWASP / DEIS)
 // ====================================================================
 export const registrarAcceso = async (req, res) => {
   const { paciente_id, atencion_id } = req.body;
@@ -21,7 +21,7 @@ export const registrarAcceso = async (req, res) => {
     const connProd = dbConfig.getConnProd();
     if (!connProd) {
       return res.status(503).json({ 
-        msg: "Base de datos de producción no disponible para operaciones forenses." 
+        msg: "Base de datos de producción no disponible para operaciones de registro de auditoria." 
       });
     }
 
@@ -89,10 +89,10 @@ export const registrarAcceso = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ Excepción crítica en bitacoraController:", error.stack);
+    console.error("⚠️ Excepción crítica en bitacoraController:", error.stack);
     return res.status(500).json({ 
       error: "InternalServerError",
-      msg: "Error interno del servidor al procesar la huella de auditoría forense." 
+      msg: "Error interno del servidor al procesar el registro de auditoría." 
     });
   }
 };

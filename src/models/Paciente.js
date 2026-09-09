@@ -22,8 +22,6 @@ export const pacienteSchema = new mongoose.Schema(
   },
 );
 
-// ❌ Elimina esta línea porque ya tienes `unique: true`
-// pacienteSchema.index({ rut: 1 }, { unique: true });
 
 const Paciente = mongoose.models.Paciente || mongoose.model("Paciente", pacienteSchema, "pacientes");
 export default Paciente;

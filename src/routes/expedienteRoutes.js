@@ -4,7 +4,7 @@ import {
   obtenerExpedientePorPaciente,
   agregarAtencion,
   obtenerExpedienteFHIR,
-  // 🌟 FORZAMOS LA IMPORTACIÓN EXACTA DEL CONTROLADOR TRANSACCIONAL
+  // FORZAMOS LA IMPORTACIÓN EXACTA DEL CONTROLADOR TRANSACCIONAL
   crearAtencionFichaNueva 
 } from '../controllers/expedienteController.js';
 
@@ -17,7 +17,7 @@ router.use(verificarToken);
 
 router.post('/', crearExpediente);
 
-// 🌟 ENDPOINT DE INTEROPERABILIDAD DEFINITIVO:
+// ENDPOINT DE INTEROPERABILIDAD DEFINITIVO:
 // Esta ruta procesará el JSON y romperá el error 404 de inmediato
 router.post('/importar', crearAtencionFichaNueva);
 router.post('/fhir/importar', crearAtencionFichaNueva);

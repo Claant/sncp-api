@@ -1,6 +1,6 @@
 // controllers/centroSaludController.js
 import mongoose from "mongoose";
-import * as dbConfig from "../config/db.js"; // 🚀 CORRECCIÓN: Cambiado para usar el getter dinámico de ESM
+import * as dbConfig from "../config/db.js"; // CORRECCIÓN: Cambiado para usar el getter dinámico de ESM
 import { centroSaludSchema } from "../models/CentroSalud.js"; // Importación del esquema puro
 
 // ====================================================================
@@ -18,12 +18,12 @@ export const crearCentroSalud = async (req, res) => {
   }
 
   try {
-    // 🚀 CORRECCIÓN: Extraemos el pool de conexiones en caliente usando el getter ESM
+    // CORRECCIÓN: Extraemos el pool de conexiones en caliente usando el getter ESM
     const connProd = dbConfig.getConnProd();
 
     if (!connProd) {
       console.error(
-        "❌ Error: El pool de conexiones connProd no está inicializado en centroSaludController.",
+        "⚠️ Error: El pool de conexiones connProd no está inicializado en centroSaludController.",
       );
       return res
         .status(503)
@@ -49,7 +49,7 @@ export const crearCentroSalud = async (req, res) => {
       centro: nuevoCentro,
     });
   } catch (error) {
-    console.error("❌ Error al crear centro de salud:", error.stack);
+    console.error("⚠️ Error al dar de alta al crear centro de salud:", error.stack);
     return res
       .status(500)
       .json({
@@ -63,12 +63,12 @@ export const crearCentroSalud = async (req, res) => {
 // ====================================================================
 export const obtenerCentrosSalud = async (req, res) => {
   try {
-    // 🚀 CORRECCIÓN: Extraemos el pool de conexiones en caliente usando el getter ESM
+    // CORRECCIÓN: Extraemos el pool de conexiones en caliente usando el getter ESM
     const connProd = dbConfig.getConnProd();
 
     if (!connProd) {
       console.error(
-        "❌ Error: El pool de conexiones connProd no está inicializado en centroSaludController.",
+        "⚠️ Error: El pool de conexiones connProd no está inicializado en centroSaludController.",
       );
       return res
         .status(503)
@@ -86,9 +86,9 @@ export const obtenerCentrosSalud = async (req, res) => {
       .lean();
     return res.json(centros);
   } catch (error) {
-    console.error("❌ Error al obtener centros de salud:", error.message);
+    console.error("⚠️ Error al obtener centros de salud:", error.message);
     return res
       .status(500)
-      .json({ msg: "Error al cargar la información de la red asistencial." });
+      .json({ msg: "Error al cargar la información del centro de salud." });
   }
 };

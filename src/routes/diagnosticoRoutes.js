@@ -2,7 +2,7 @@ import express from 'express';
 import { crearDiagnostico, obtenerDiagnosticoPorAtencion } from '../controllers/diagnosticoController.js';
 
 
-// 🟢 Corrección estricta de middleware: usamos verificarToken y permitirRoles
+// Corrección estricta de middleware: usamos verificarToken y permitirRoles
 import { verificarToken } from '../middlewares/authMiddleware.js';
 import { permitirRoles } from '../middlewares/rolMiddleware.js';
 

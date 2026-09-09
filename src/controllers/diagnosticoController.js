@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
-import * as dbConfig from "../config/db.js"; // 🚀 CORRECCIÓN: Uso de getters dinámicos de ESM
+import * as dbConfig from "../config/db.js"; // CORRECCIÓN: Uso de getters dinámicos de ESM
 
 import { diagnosticoSchema } from "../models/Diagnostico.js";
 import { atencionMedicaSchema } from "../models/AtencionMedica.js";
 import { usuarioSchema } from "../models/Usuario.js";
-import { bitacoraSchema } from "../models/BitacoraAcceso.js"; // 🚀 UNIFICADO: Esquema maestro definitivo
+import { bitacoraSchema } from "../models/BitacoraAcceso.js"; // UNIFICADO: Esquema maestro definitivo
 
 // ====================================================================
 // 🔹 Caso de Uso: Crear Diagnóstico (Asociado a CIE-10)
@@ -17,7 +17,7 @@ export const crearDiagnostico = async (req, res) => {
       return res.status(400).json({ msg: "Debe indicar atención, descripción y código de enfermedad." });
     }
 
-    // 🚀 CORRECCIÓN: Resolvemos la conexión en caliente desde el getter ESM
+    // CORRECCIÓN: Resolvemos la conexión en caliente desde el getter ESM
     const connProd = dbConfig.getConnProd();
     if (!connProd) {
       return res.status(503).json({ msg: "Base de datos de producción no disponible temporalmente." });
@@ -35,7 +35,7 @@ export const crearDiagnostico = async (req, res) => {
 
     return res.status(201).json({ msg: "Diagnóstico creado exitosamente.", diagnostico: nuevoDiagnostico });
   } catch (error) {
-    console.error("❌ Error al crear diagnóstico:", error.message);
+    console.error("⚠️ Error al crear diagnóstico:", error.message);
     return res.status(500).json({ msg: "Error interno al crear diagnóstico." });
   }
 };
@@ -51,7 +51,7 @@ export const obtenerDiagnosticoPorAtencion = async (req, res) => {
   }
 
   try {
-    // 🚀 CORRECCIÓN: Resolvemos la conexión en caliente desde el getter ESM
+    // CORRECCIÓN: Resolvemos la conexión en caliente desde el getter ESM
     const connProd = dbConfig.getConnProd();
     if (!connProd) {
       return res.status(503).json({ msg: "Base de datos de producción no disponible temporalmente." });
@@ -62,7 +62,7 @@ export const obtenerDiagnosticoPorAtencion = async (req, res) => {
     const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
     const UsuarioProd = connProd.models.Usuario || connProd.model("Usuario", usuarioSchema, "usuarios");
     
-    // 🚀 UNIFICADO: Compilamos los logs forenses apuntando exclusivamente al modelo y colección BitacoraAcceso
+    // UNIFICADO: Compilamos los logs forenses apuntando exclusivamente al modelo y colección BitacoraAcceso
     const BitacoraProd = connProd.models.BitacoraAcceso || connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
 
     // 1. Buscar los diagnósticos CIE-10 de forma directa
@@ -79,7 +79,7 @@ export const obtenerDiagnosticoPorAtencion = async (req, res) => {
         if (medicoDB) nombreMedico = medicoDB.nombre;
       }
 
-      // 🚀 UNIFICADO: Persistencia limpia sobre BitacoraAcceso inyectando el nombre del médico para el Frontend
+      // UNIFICADO: Persistencia limpia sobre BitacoraAcceso inyectando el nombre del médico para el Frontend
       const nuevaBitacora = new BitacoraProd({
         usuario_id: idMedico ? new mongoose.Types.ObjectId(idMedico) : new mongoose.Types.ObjectId(),
         nombre_medico: nombreMedico,
@@ -97,7 +97,7 @@ export const obtenerDiagnosticoPorAtencion = async (req, res) => {
       .limit(5)
       .lean();
 
-    // 🌟 NORMALIZACIÓN MULTI-CAPA: Inyectamos 'startTime' mapeando la variable nativa de Atlas que pide Vue
+    // NORMALIZACIÓN MULTI-CAPA: Inyectamos 'startTime' mapeando la variable nativa de Atlas que pide Vue
     const bitacora = bitacoraRaw.map(log => ({
       ...log,
       startTime: log.fecha_consulta || log.createdAt || new Date().toISOString(),
@@ -108,7 +108,7 @@ export const obtenerDiagnosticoPorAtencion = async (req, res) => {
     return res.status(200).json({ diagnosticos, bitacora });
 
   } catch (error) {
-    console.error("❌ Excepción en controlador de diagnósticos:", error.message);
+    console.error("⚠️ Excepción en controlador de diagnósticos:", error.message);
     return res.status(500).json({ 
       msg: "Error interno al obtener diagnósticos y bitácora.",
       diagnosticos: [],

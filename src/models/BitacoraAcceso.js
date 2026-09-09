@@ -37,7 +37,7 @@ export const bitacoraSchema = new mongoose.Schema({
   versionKey: false 
 });
 
-// 🚀 ÍNDICES OPTIMIZADOS PARA BÚSQUEDAS FORENSES RÁPIDAS
+// ÍNDICES OPTIMIZADOS PARA BÚSQUEDAS FORENSES RÁPIDAS
 bitacoraSchema.index({ paciente_id: 1, fecha_consulta: -1 });
 bitacoraSchema.index({ atencion_id: 1, fecha_consulta: -1 });
 

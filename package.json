@@ -1,7 +1,7 @@
 {
   "name": "sncp-api",
   "version": "1.0.0",
-  "description": "Aplicacion web cuyo proposito sera unificar el acceso al Historial Clínico de Pacientes",
+  "description": "Aplicacion web cuyo proposito sera implementar la interoperabilidad entre dos centros de salud",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",

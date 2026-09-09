@@ -12,6 +12,15 @@ import Direccion from './src/models/Direccion.js';
 
 dotenv.config();
 
+const formatearRutSeed = (rutRaw) => {
+  if (!rutRaw) return '';
+  // Elimina cualquier residuo o carácter invisible BOM y fuerza mayúsculas
+  let limpio = rutRaw.replace(/^\uFEFF/, '').replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 2) return limpio;
+  return `${limpio.slice(0, -1)}-${limpio.slice(-1)}`;
+};
+
+
 const runSeed = async () => {
   try {
     // Conexión al clúster DEMO de interoperabilidad
@@ -49,24 +58,24 @@ const runSeed = async () => {
 
     // 3. Insertar una nómina con RUTs, nombres y fechas de nacimiento totalmente NUEVOS
     const pacientes = await Paciente.insertMany([
-  {
-    rut: '17845231-9',
-    nombre: 'Camila Fernanda Rojas Castillo',
-    fecha_nacimiento: new Date('1993-08-14'),
+ /* {
+    rut: formatearRutSeed('12345736-k'), // se guarda como rut limpio 
+    nombre: 'Camilo Renzo Tapia Ogalde',
+    fecha_nacimiento: new Date('1986-03-14'),
     centro_salud_id: centro._id,
     direccion_id: direcciones[0]._id
   },
   {
-    rut: '16590247-K',
-    nombre: 'Felipe Andrés González Herrera',
-    fecha_nacimiento: new Date('1985-02-27'),
+    rut: formatearRutSeed('13453219-5'),
+    nombre: 'Alejandro Eduardo Hernandez Guzman',
+    fecha_nacimiento: new Date('1989-11-01'),
     centro_salud_id: centro._id,
     direccion_id: direcciones[1]._id
-  },
+  },*/
   {
-    rut: '21039485-5',
-    nombre: 'Valentina Sofía Ramírez Torres',
-    fecha_nacimiento: new Date('2001-11-09'),
+    rut: formatearRutSeed('20324742-5'),
+    nombre: 'Nicolas Pedro Aguirre Godoy',
+    fecha_nacimiento: new Date('1980-06-02'),
     centro_salud_id: centro._id,
     direccion_id: direcciones[2]._id
   }

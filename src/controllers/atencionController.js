@@ -1,13 +1,13 @@
 // controllers/atencionController.js
 import mongoose from 'mongoose'; 
-import * as dbConfig from '../config/db.js'; // 🚀 Pool dinámico mediante getters ESM
+import * as dbConfig from '../config/db.js'; // Pool dinámico mediante getters ESM
 
 // IMPORTACIÓN EXCLUSIVA DE ESQUEMAS CLÍNICOS: Previene el colapso del ModuleLoader en ESM
 import { atencionMedicaSchema } from '../models/AtencionMedica.js';
 import { direccionSchema } from '../models/Direccion.js';
 import { pacienteSchema } from '../models/Paciente.js';
 import { diagnosticoSchema } from '../models/Diagnostico.js';
-import { bitacoraSchema } from '../models/BitacoraAcceso.js'; // 🚀 UNIFICADO: Esquema maestro definitivo
+import { bitacoraSchema } from '../models/BitacoraAcceso.js'; // UNIFICADO: Esquema maestro definitivo
 import { usuarioSchema } from '../models/Usuario.js';
 
 // FUNCIÓN AUXILIAR MAESTRA: Asegura el formato de forma estricta (ej: 12345678-K)
@@ -20,14 +20,14 @@ const limpiarRut = (rutRaw) => {
     return `${cuerpo}-${dv}`; 
 };
 
-// 🔹 AUXILIAR DE COMPILACIÓN EN CALIENTE: Garantiza que los modelos apunten a la conexión activa
+// AUXILIAR DE COMPILACIÓN EN CALIENTE: Garantiza que los modelos apunten a la conexión activa
 const getModelosProd = (connProd) => {
     const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
     const DiagnosticoProd = connProd.models.Diagnostico || connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
     const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
     const DireccionProd = connProd.models.Direccion || connProd.model("Direccion", direccionSchema, "direcciones");
     
-    // 🚀 CORRECCIÓN CRÍTICA: Se inyecta el esquema maestro unificado para evitar fallas estructurales de campos obligatorios
+    // CORRECCIÓN CRÍTICA: Se inyecta el esquema maestro unificado para evitar fallas estructurales de campos obligatorios
     const BitacoraAccesoProd = connProd.models.BitacoraAcceso || connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
 
     if (!connProd.models.Usuario) connProd.model("Usuario", usuarioSchema, "usuarios");
@@ -60,7 +60,7 @@ export const crearAtencion = async (req, res) => {
     const idMedicoAutenticado = req.usuario?._id || req.user?._id || req.usuario?.id || req.user?.id || null;
 
     if (!idMedicoAutenticado) {
-      return res.status(401).json({ msg: "No se pudo verificar la identidad legal del médico firmante." });
+      return res.status(401).json({ msg: "No se pudo verificar la identidad del médico que autoriza." });
     }
 
     const nuevaAtencion = new AtencionMedicaProd({
@@ -82,17 +82,17 @@ export const crearAtencion = async (req, res) => {
     nuevaAtencion.diagnostico_id = nuevoDiagnostico._id;
     await nuevaAtencion.save();
 
-    // 🟢 ARQUITECTURA DESACOPLADA: Se remueve la inserción síncrona redundante de BitacoraAccesoProd.
+    // ARQUITECTURA DESACOPLADA: Se remueve la inserción síncrona redundante de BitacoraAccesoProd.
     // La responsabilidad de la auditoría ahora recae al 100% en el controlador dedicado 'bitacoraController.js'.
 
     return res.status(201).json({
-      msg: "Atención médica tradicional y diagnóstico CIE-10 registrados exitosamente en Atlas.",
+      msg: "Atención médica y diagnóstico registrados exitosamente en la base de datos.",
       atencion: nuevaAtencion,
       diagnostico: nuevoDiagnostico
     });
 
   } catch (error) {
-    console.error("❌ Error controlado en el controlador crearAtencion:", error.stack);
+    console.error("⚠️ Error controlado en el controlador crearAtencion:", error.stack);
     return res.status(500).json({ 
       error: "InternalServerError",
       msg: "Ocurrió un error en el servidor al intentar registrar la atención clínica.", 
@@ -128,7 +128,7 @@ export const obtenerHistorialPaciente = async (req, res) => {
 
         return res.json(historial);
     } catch (error) {
-        console.error('❌ Error al obtener historial clínico:', error.message);
+        console.error('⚠️ Error al obtener historial clínico:', error.message);
         return res.status(500).json({ msg: 'Error al cargar el historial clínico del paciente.' });
     }
 };
@@ -223,7 +223,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
 
                 const pacienteExisteNormal = await PacienteProd.findOne({ rut: rutSanitizado });
                 if (pacienteExisteNormal) {
-                    return res.status(400).json({ msg: 'El RUT de este paciente ya figura en el Sistema Nacional Clínico.' });
+                    return res.status(400).json({ msg: 'El RUT de este paciente ya figura en los registros de este centro médico.' });
                 }
 
                 const dirNormal = await DireccionProd.create({ calle, numero, comuna, ciudad });
@@ -261,7 +261,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
                 });
 
             } catch (errNormal) {
-                console.error('❌ Falla crítica real en cascada normal de respaldo:', errNormal.message);
+                console.error('⚠️ Falla crítica real en cascada normal de respaldo:', errNormal.message);
                 return res.status(500).json({ msg: `Falla crítica en inserción de datos directa: ${errNormal.message}` });
             }
         }
@@ -274,7 +274,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
         } catch (e) {}
         session.endSession();
 
-        console.error('❌ Error definitivo abortado por el controlador:', error.message);
+        console.error('⚠️ Error definitivo abortado por el controlador:', error.message);
         return res.status(500).json({ msg: `Error interno al procesar el expediente compuesto: ${error.message}` });
     }
 };

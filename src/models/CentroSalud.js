@@ -19,7 +19,7 @@ export const centroSaludSchema = new mongoose.Schema({
     versionKey: false // Remueve el campo __v interno de Mongoose para tus paquetes unificados
 });
 
-// 🚀 ADICIÓN CRÍTICA: Índice físico en Atlas para acelerar la ordenación alfabética en los catálogos del frontend
+// ADICIÓN CRÍTICA: Índice físico en Atlas para acelerar la ordenación alfabética en los catálogos del frontend
 centroSaludSchema.index({ nombre_centro: 1 });
 
 // Configuración preventiva para evitar OverwriteModelError durante el desarrollo en caliente

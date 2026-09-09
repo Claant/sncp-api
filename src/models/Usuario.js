@@ -39,7 +39,7 @@ export const usuarioSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true,   // ✅ ya basta con esto
+    unique: true,   // ya basta con esto
     trim: true
   },
   password: {
@@ -58,8 +58,6 @@ export const usuarioSchema = new mongoose.Schema({
 // Solo índices adicionales que no estén duplicados
 usuarioSchema.index({ createdAt: -1 }); 
 
-// ❌ Elimina esta línea porque ya tienes unique en el campo
-// usuarioSchema.index({ username: 1 }, { unique: true });
 
 usuarioSchema.pre('save', async function() {
   if (!this.isModified('password')) return;

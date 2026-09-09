@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// 🔹 EXPORTACIÓN EXPLÍCITA DEL ESQUEMA (Para inyección y población dinámica en pools concurrentes)
+// EXPORTACIÓN EXPLÍCITA DEL ESQUEMA (Para inyección y población dinámica en pools concurrentes)
 export const expedienteSchema = new mongoose.Schema(
   {
     paciente_id: {
@@ -29,11 +29,11 @@ export const expedienteSchema = new mongoose.Schema(
   },
 );
 
-// 🚀 ADICIÓN CRÍTICA: Forzamos la creación del índice físico único en Atlas para búsquedas instantáneas
+// ADICIÓN CRÍTICA: Forzamos la creación del índice físico único en Atlas para búsquedas instantáneas
 expedienteSchema.index({ paciente_id: 1 }, { unique: true });
 
 // Verificación condicional para evitar OverwriteModelError durante el desarrollo en caliente (Nodemon)
 const Expediente = mongoose.models.Expediente || mongoose.model("Expediente", expedienteSchema, "expedientes");
 
-// 🔹 EXPORTACIÓN POR DEFECTO DEL MODELO TRADICIONAL
+// EXPORTACIÓN POR DEFECTO DEL MODELO TRADICIONAL
 export default Expediente;
