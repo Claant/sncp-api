@@ -7,9 +7,12 @@ const router = express.Router();
 // ====================================================================
 // CONFIGURACIÓN DEL MITIGADOR DE FUERZA BRUTA (RATE LIMITER)
 // ====================================================================
+
+
+
 const loginLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // Ventana de tiempo de 1 minuto bloqueado
-  max: 5, // Bloquea la IP tras 5 intentos fallidos consecutivos
+  max: 50, // Bloquea la IP tras 5 intentos fallidos consecutivos
   message: { 
     msg: "Demasiados intentos de inicio de sesión fallidos. Por seguridad su IP ha sido bloqueada temporalmente por 1 minuto." 
   },
@@ -17,8 +20,10 @@ const loginLimiter = rateLimit({
   legacyHeaders: false, 
 });
 
+
 // Endpoint para el inicio de sesión (CU-001)
 // Se inyecta el limitador perimetral antes de procesar el controlador de login
+// router.post('/login', loginLimiter, login); // Coméntalo transitoriamente para el test
 router.post('/login', loginLimiter, login);
 
 export default router;

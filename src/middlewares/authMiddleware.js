@@ -30,6 +30,8 @@ export const verificarToken = (req, res, next) => {
     // 5. Dar paso al siguiente eslabón de la ruta (permitirRoles o controlador final)
     return next();
     
+
+    // aca el error es controlado, no se tira un 500, sino un 403 con mensaje de token invalido o expirado
   } catch (error) {
     console.error('Fallo controlado en el validador de tokens:', error.message);
     return res.status(403).json({ 

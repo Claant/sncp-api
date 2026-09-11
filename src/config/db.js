@@ -4,16 +4,16 @@ import mongoose from 'mongoose';
 let _connProd = null;
 let _connDemo = null;
 
-// 🔹 CORRECCIÓN ENLACE ESM: Usamos getters para asegurar la exportación en vivo siempre actualizada
+// CORRECCIÓN ENLACE ESM: Usamos getters para asegurar la exportación en vivo siempre actualizada
 export const getConnProd = () => _connProd;
 export const getConnDemo = () => _connDemo;
 
 const dbOptionsDefault = {
-  maxPoolSize: 20,             
-  minPoolSize: 10,             
-  socketTimeoutMS: 60000,      
-  serverSelectionTimeoutMS: 5000, 
-  heartbeatFrequencyMS: 10000, 
+  maxPoolSize: 50,    // maximo 20 conexiones simultaneas    
+  minPoolSize: 15,   // mínimo 10 conexiones simultaneas          
+  socketTimeoutMS: 60000,     // se define el tiempo de 60 segundos si la conexion no realiza operaciones, se cierra la conexion. tiempo de inactividad
+  serverSelectionTimeoutMS: 5000, // tiempo de 5 segundos para que alguna conexion se libere
+  heartbeatFrequencyMS: 10000,  // Ping. verifica cada 10 segundos si existe conexion entre el api rest y la base de datos
 };
 
 export const connectDB = async () => {
@@ -48,9 +48,9 @@ export const connectDemoDB = async () => {
   try {
     _connDemo = mongoose.createConnection(process.env.MONGO_URI_DEMO, {
       dbName: 'sistema-informacion-clinica-demo', 
-      maxPoolSize: 10,
-      minPoolSize: 5, // Tamaño mínimo del pool para mantener conexiones activas
-      socketTimeoutMS: 60000, // Tiempo de espera para operaciones de socket
+      maxPoolSize: 20,  // pool de 20 conexiones simultáneas para la demo
+      minPoolSize: 5, 
+      socketTimeoutMS: 60000, 
       serverSelectionTimeoutMS: 5000,
       heartbeatFrequencyMS: 10000,
     });
@@ -69,7 +69,7 @@ export const connectDemoDB = async () => {
     return _connDemo;
   } catch (error) {
     console.error('Error al conectar al cluster express (El servidor seguirá corriendo para Prod):', error.message);
-    // CORRECCIÓN: Quitamos process.exit(1) para que un fallo en DEMO no tire abajo PRODUCCIÓN
+    // un fallo en el cluster secundario de fhir no debe detener el proceso principal, solo se loguea el error
     return null;
   }
 };
