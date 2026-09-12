@@ -9,6 +9,7 @@ import { pacienteSchema } from '../models/Paciente.js';
 import { diagnosticoSchema } from '../models/Diagnostico.js';
 import { bitacoraSchema } from '../models/BitacoraAcceso.js'; // UNIFICADO: Esquema maestro definitivo
 import { usuarioSchema } from '../models/Usuario.js';
+import {construirFHIRBundle} from '../utils/fhirMapper.js';
 
 // FUNCIÓN AUXILIAR MAESTRA: Asegura el formato de forma estricta (ej: 12345678-K)
 const limpiarRut = (rutRaw) => {
