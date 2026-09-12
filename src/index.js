@@ -100,7 +100,7 @@ const arrancarServidorAsistencial = async () => {
     
     // Una vez que los clústeres devuelven la promesa exitosa, abrimos el puerto de Express
     
-    app.listen(PORT, '127.0.0.1', () => {
+    app.listen(PORT, () => {
       console.log(`Servidor asistencial corriendo exitosamente en el puerto ${PORT}`);
       console.log(`Esperando peticiones del cliente de Vue...`);
     });
