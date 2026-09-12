@@ -108,30 +108,61 @@ export const crearAtencion = async (req, res) => {
 
 
 // =========================================================================
-// Caso de Uso: Obtener el historial de consultas de un paciente específico
+// Caso de Uso Reestructurado: Obtener el historial local en formato HL7 FHIR
 // =========================================================================
 export const obtenerHistorialPaciente = async (req, res) => {
     const { pacienteId } = req.params;
-
     try {
+        if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+            return res.status(400).json({ msg: "El ID del paciente no es válido." });
+        }
+
         const connProd = dbConfig.getConnProd();
         if (!connProd) return res.status(503).json({ msg: "Base de datos desconectada temporalmente." });
+        
+        const { AtencionMedicaProd, DiagnosticoProd, PacienteProd } = getModelosProd(connProd);
 
-        const { AtencionMedicaProd } = getModelosProd(connProd);
+        // 1. Extraer los datos demográficos básicos del paciente local
+        const pacienteLocal = await PacienteProd.findById(pacienteId).populate("direccion_id").lean();
+        if (!pacienteLocal) {
+            return res.status(404).json({ msg: "Paciente no registrado en los índices asistenciales locales." });
+        }
 
-        const historial = await AtencionMedicaProd.find({ paciente_id: pacienteId })
+        // 2. Extraer el historial de consultas cronológicas locales de producción
+        const historialAtenciones = await AtencionMedicaProd.find({ paciente_id: pacienteId })
             .populate({
                 path: 'usuario_id',
                 select: 'nombre especialidad rut'
             })
-            .sort({ fecha: -1 });
+            .sort({ fecha: -1 })
+            .lean();
 
-        return res.json(historial);
+        // 3. Extraer los diagnósticos locales amarrados a este bloque de atenciones
+        const diagnosticosLocales = await DiagnosticoProd.find({
+            atencion_id: { $in: historialAtenciones.map(a => a._id) }
+        }).lean();
+
+        // ====================================================================
+        // 🚀 CAPA DE TRADUCCIÓN INTEROPERABLE: MONGO LOCAL JSON ➡️ HL7 FHIR BUNDLE
+        // ====================================================================
+        const fhirBundleLocal = construirFHIRBundle(pacienteLocal, historialAtenciones, diagnosticosLocales);
+
+        // 4. Retorno de Interoperabilidad Homologado
+        return res.status(200).json({
+            origen: "local (pool-producción)",
+            msg: "Historial asistencial de producción convertido exitosamente al estándar clínico HL7 FHIR.",
+            fhirBundle: fhirBundleLocal
+        });
+
     } catch (error) {
-        console.error('⚠️ Error al obtener historial clínico:', error.message);
-        return res.status(500).json({ msg: 'Error al cargar el historial clínico del paciente.' });
+        console.error('⚠️ Error controlado al procesar historial clínico local FHIR:', error.message);
+        return res.status(500).json({ 
+            error: "InternalServerError",
+            msg: 'Error del servidor al procesar y convertir el historial clínico local a FHIR.' 
+        });
     }
 };
+
 
 // =========================================================================
 // Caso de Uso: Registrar consulta completa con alta express (4 Form / Transacción ACID)

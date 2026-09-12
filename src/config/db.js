@@ -9,11 +9,11 @@ export const getConnProd = () => _connProd;
 export const getConnDemo = () => _connDemo;
 
 const dbOptionsDefault = {
-  maxPoolSize: 50,    // maximo 20 conexiones simultaneas    
+  maxPoolSize: 400,    // maximo 20 conexiones simultaneas    
   minPoolSize: 15,   // mínimo 10 conexiones simultaneas          
   socketTimeoutMS: 60000,     // se define el tiempo de 60 segundos si la conexion no realiza operaciones, se cierra la conexion. tiempo de inactividad
-  serverSelectionTimeoutMS: 5000, // tiempo de 5 segundos para que alguna conexion se libere
-  heartbeatFrequencyMS: 10000,  // Ping. verifica cada 10 segundos si existe conexion entre el api rest y la base de datos
+  serverSelectionTimeoutMS: 15000, // tiempo de 5 segundos para que alguna conexion se libere
+  heartbeatFrequencyMS: 20000,  // Ping. verifica cada 10 segundos si existe conexion entre el api rest y la base de datos
 };
 
 export const connectDB = async () => {
@@ -48,11 +48,11 @@ export const connectDemoDB = async () => {
   try {
     _connDemo = mongoose.createConnection(process.env.MONGO_URI_DEMO, {
       dbName: 'sistema-informacion-clinica-demo', 
-      maxPoolSize: 20,  // pool de 20 conexiones simultáneas para la demo
-      minPoolSize: 5, 
-      socketTimeoutMS: 60000, 
-      serverSelectionTimeoutMS: 5000,
-      heartbeatFrequencyMS: 10000,
+      maxPoolSize: 400,  // pool de 20 conexiones simultáneas para la demo
+      minPoolSize: 15, // mínimo 5 conexiones simultáneas para la demo
+      socketTimeoutMS: 60000, // se define el tiempo de 60 segundos si la conexion no realiza operaciones, se cierra la conexion. tiempo de inactividad
+      serverSelectionTimeoutMS: 15000, // tiempo de 10 segundos para que alguna conexion se libere
+      heartbeatFrequencyMS: 20000, // Ping. verifica cada 10 segundos si existe conexion entre el api rest y la base de datos
     });
 
     await _connDemo.asPromise();

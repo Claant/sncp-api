@@ -11,6 +11,7 @@ import { atencionMedicaSchema } from "../models/AtencionMedica.js";
 import { diagnosticoSchema } from "../models/Diagnostico.js";
 import { bitacoraSchema } from "../models/BitacoraAcceso.js";
 import { usuarioSchema } from "../models/Usuario.js"; 
+import { construirFHIRBundle } from "../utils/fhirMapper.js"; // Función de interoperabilidad HL7 FHIR
 
 // FUNCIÓN AUXILIAR MAESTRA UNIFICADA: Asegura el formato de forma estricta (ej: 12345678-K)
 const limpiarRut = (rutRaw) => {
@@ -101,127 +102,116 @@ export const crearPaciente = async (req, res) => {
         return res.status(500).json({ error: "InternalServerError", msg: 'Error interno del servidor al registrar paciente.' });
     }
 };
+
+
 // ====================================================================
-// CASO DE USO INTEROPERABLE TOTALMENTE BLINDADO Y SINCRONIZADO
+// Caso de Uso Interoperable: Obtener Paciente por RUT (Conversión Híbrida local + externa)
 // GET /api/pacientes/:rut
 // ====================================================================
+
+
 export const obtenerPacientePorRut = async (req, res) => {
   const { rut } = req.params;
   try {
     const connProd = dbConfig.getConnProd();
     const connDemo = dbConfig.getConnDemo();
-
     if (!connProd) {
-        return res.status(503).json({ error: "DbError", msg: "Base de datos no inicializada para búsquedas clínicas." });
+      return res.status(503).json({ error: "DbError", msg: "Base de datos no inicializada para búsquedas clínicas." });
     }
-
     const rutSanitizado = limpiarRut(rut);
 
-    // Inyección estricta de submodelos en el pool dinámico connProd basándonos en tu Data Explorer
+    // Enlace estricto de esquemas en el Pool de Producción Local
     if (!connProd.models.Direccion) connProd.model("Direccion", direccionSchema, "direcciones");
     if (!connProd.models.CentroSalud) connProd.model("CentroSalud", centroSaludSchema, "centro-salud");
     if (!connProd.models.Usuario) connProd.model("Usuario", usuarioSchema, "usuarios");
     if (!connProd.models.AtencionMedica) connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
     if (!connProd.models.Diagnostico) connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
-    
-    // REEMPLAZO: Registramos únicamente BitacoraAcceso en el pool en lugar de la antigua Auditoria
     if (!connProd.models.BitacoraAcceso) connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
 
     const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
     const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
     const DiagnosticoProd = connProd.models.Diagnostico || connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
-    
-    // REEMPLAZO: Instanciamos el modelo unificado correcto de bitácora
-    const BitacoraProd = connProd.models.BitacoraAcceso || connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
 
-    // Paso A: Buscar paciente en base local (Captura de pacientes)
+    // ----------------------------------------------------------------
+    // NODO A: CONSULTAR BASE DE DATOS LOCAL
+    // ----------------------------------------------------------------
     const pacienteLocal = await PacienteProd.findOne({ rut: rutSanitizado })
       .populate("direccion_id")
       .populate("centro_salud_id");
 
     if (pacienteLocal) {
-      const atencionesRaw = await AtencionMedicaProd.find({ paciente_id: pacienteLocal._id })
+      const atencionesLocales = await AtencionMedicaProd.find({ paciente_id: pacienteLocal._id })
         .populate("usuario_id", "nombre especialidad rut")
         .sort({ fecha: -1 })
         .lean();
 
-      // Normalizamos inyectando la propiedad 'startTime' cronológica obligatoria que pide Vue
-      const atenciones = atencionesRaw.map(a => ({
-        ...a,
-        startTime: a.fecha || a.createdAt || new Date().toISOString()
-      }));
-
-      // OBTENER DIAGNÓSTICOS: Buscamos en 'diagnosticos' mapeando los IDs de las atenciones
-      const diagnosticos = await DiagnosticoProd.find({
-        atencion_id: { $in: atenciones.map(a => a._id) }
+      const diagnosticosLocales = await DiagnosticoProd.find({
+        atencion_id: { $in: atencionesLocales.map(a => a._id) }
       }).lean();
 
-      // REEMPLAZO: Interrogamos directamente a la colección real unificada 'bitacora-accesos'
-      const bitacoraRaw = await BitacoraProd.find({ paciente_id: pacienteLocal._id })
-        .sort({ fecha_consulta: -1 })
-        .lean();
-
-      const bitacora = bitacoraRaw.map(b => ({
-        ...b,
-        startTime: b.fecha_consulta || b.createdAt || new Date().toISOString(),
-        nombre_medico: b.nombre_medico || "Dra. Ana Martínez"
-      }));
-
-      // Capturar ID del médico autenticado de manera tolerante a req.user o req.usuario
+      // Cripto-auditoría forense centralizada OWASP
       const idMedicoAutenticado = req.user?.id || req.user?._id || req.usuario?.id || req.usuario?._id;
+      if (idMedicoAutenticado) {
+        await registrarAccesoForense(idMedicoAutenticado, req.user?.nombre || req.usuario?.nombre, req.user?.rol || req.usuario?.rol, pacienteLocal._id);
+      }
 
-   
-      // Despachamos el payload unificado limpio directo al Frontend en JSON estricto
+      // 🔥 ¡CONVERSIÓN LOCAL A FHIR BUNDLE!
+      const fhirBundleLocal = construirFHIRBundle(pacienteLocal, atencionesLocales, diagnosticosLocales);
+
       return res.status(200).json({
         origen: "local",
-        msg: "Paciente encontrado en los registros de este centro médico.",
-        paciente: pacienteLocal,
-        expediente: {
-          atenciones: atenciones || [],
-          diagnosticos: diagnosticos || [],
-          bitacora: bitacora || []
-        }
+        msg: "Paciente local transformado exitosamente al estándar internacional HL7 FHIR.",
+        fhirBundle: fhirBundleLocal
       });
     }
 
-    // Paso B: Buscar en repositorio externo DEMO si no existe localmente
+    // ----------------------------------------------------------------
+    // NODO B: CONMUTACIÓN AL CLÚSTER REMOTO EXTERNO (DEMO ATLAS)
+    // ----------------------------------------------------------------
     if (!connDemo) {
       return res.status(404).json({
         origen: "local",
-        msg: "Paciente no encontrado en la base de datos de este centro de salud. No se pudo establecer conexión con el repositorio externo.",
-        expediente: { atenciones: [], diagnosticos: [], bitacora: [] }
+        msg: "Paciente no encontrado en base local y repositorio externo fuera de línea.",
+        fhirBundle: null
       });
     }
 
     const PacienteDemo = connDemo.models.Paciente || connDemo.model("Paciente", pacienteSchema, "pacientes");
+    if (!connDemo.models.AtencionMedica) connDemo.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
+    if (!connDemo.models.Diagnostico) connDemo.model("Diagnostico", diagnosticoSchema, "diagnosticos");
+
+    const AtencionMedicaDemo = connDemo.models.AtencionMedica;
+    const DiagnosticoDemo = connDemo.models.Diagnostico;
+
     const pacienteExterno = await PacienteDemo.findOne({ rut: rutSanitizado });
 
     if (!pacienteExterno) {
       return res.status(404).json({
         origen: "ninguno",
-        msg: "El RUT ingresado no está registrado en este centro de salud ni tampoco en otro recinto de salud externo.",
-        expediente: { atenciones: [], diagnosticos: [], bitacora: [] }
+        msg: "El RUT ingresado no figura registrado en ningún nodo clínico del ecosistema.",
+        fhirBundle: null
       });
     }
 
+    // Extraer historial del clúster remoto demo
+    const atencionesExternas = await AtencionMedicaDemo.find({ paciente_id: pacienteExterno._id }).sort({ fecha: -1 }).lean();
+    const diagnosticosExternas = await DiagnosticoDemo.find({ atencion_id: { $in: atencionesExternas.map(a => a._id) } }).lean();
+
+    // 🔥 ¡CONVERSIÓN REMOTA A FHIR BUNDLE!
+    const fhirBundleExterno = construirFHIRBundle(pacienteExterno, atencionesExternas, diagnosticosExternas);
+
     return res.status(200).json({
       origen: "externo",
-      msg: "El paciente no existe en los registros de este centro de salud, pero se detectó un expediente clínico disponible en la base de datos sistema-informacion-clinica-demo.",
-      pacienteIdExterno: pacienteExterno._id,
-      nombre: pacienteExterno.nombre,
-      expediente: { atenciones: [], diagnosticos: [], bitacora: [] }
+      msg: "Paciente externo transformado exitosamente al estándar internacional HL7 FHIR desde sistema-informacion-clinica-demo.",
+      fhirBundle: fhirBundleExterno
     });
 
   } catch (error) {
-    console.error("❌ EXCEPCIÓN REAL CAPTURADA EN EXPRESS:", error.stack);
-    return res.status(500).json({
-      error: "InternalServerError",
-      msg: "Ocurrió un conflicto de procesamiento en la pasarela nacional de salud.",
-      detalle: error.message,
-      expediente: { atenciones: [], diagnosticos: [], bitacora: [] }
-    });
+    console.error("❌ EXCEPCIÓN REAL CAPTURADA EN LA PASARELA PACIENTES FHIR:", error.stack);
+    return res.status(500).json({ error: "InternalServerError", msg: "Conflicto de procesamiento interoperable." });
   }
 };
+
 
 // ====================================================================
 // Caso de Uso: Exportar Paciente en formato FHIR/JSON

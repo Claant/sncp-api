@@ -8,6 +8,8 @@ import {
 // CORRECCIÓN ESTRICTA DE ENLACE ESM: Usamos la exportación nombrada con llaves { }
 import { verificarToken } from '../middlewares/authMiddleware.js'; 
 import { permitirRoles } from '../middlewares/rolMiddleware.js';
+import { validarEsquema } from '../middlewares/validatorMiddleware.js';
+import { crearAtencionSchema, crearAtencionFichaNuevaSchema } from '../validators/atencionValidator.js';
 
 const router = express.Router();
 
@@ -16,10 +18,10 @@ const router = express.Router();
 // ====================================================================
 
 // Caso de Uso: Registrar la ficha nueva completa de alta rápida (4 formularios integrados en 1 transacción)
-router.post('/completa', verificarToken, permitirRoles('medico'), crearAtencionFichaNueva);
+router.post('/completa', verificarToken, permitirRoles('medico'), validarEsquema(crearAtencionFichaNuevaSchema), crearAtencionFichaNueva);
 
 // Caso de Uso: Registro de consulta clínica tradicional con su diagnóstico para pacientes recurrentes
-router.post('/', verificarToken, permitirRoles('medico'), crearAtencion);
+router.post('/', verificarToken, permitirRoles('medico'), validarEsquema(crearAtencionSchema), crearAtencion);
 
 // ====================================================================
 // 2. RUTAS DINÁMICAS CON PARÁMETROS VARIABLES (DEBEN IR AL FINAL)

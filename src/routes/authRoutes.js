@@ -12,7 +12,7 @@ const router = express.Router();
 
 const loginLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // Ventana de tiempo de 1 minuto bloqueado
-  max: 50, // Bloquea la IP tras 5 intentos fallidos consecutivos
+  max: 400, // Bloquea la IP tras 5 intentos fallidos consecutivos
   message: { 
     msg: "Demasiados intentos de inicio de sesión fallidos. Por seguridad su IP ha sido bloqueada temporalmente por 1 minuto." 
   },

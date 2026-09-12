@@ -30,7 +30,7 @@ const runSeed = async () => {
 
     console.log('✅ Conectado exitosamente al clúster DEMO');
 
-    // Limpieza total previa para evitar colisiones de índices únicos
+    /* Limpieza total previa para evitar colisiones de índices únicos
     await Paciente.deleteMany({});
     await Expediente.deleteMany({});
     await AtencionMedica.deleteMany({});
@@ -39,6 +39,8 @@ const runSeed = async () => {
     await Direccion.deleteMany({});
 
     console.log('🧹 Base de datos DEMO vaciada con éxito.');
+*/
+
 
     // 1. Crear centro de salud ficticio remoto para simular la pasarela nacional
     const centro = await CentroSalud.create({
@@ -49,11 +51,11 @@ const runSeed = async () => {
     // 2. Crear direcciones ficticias variadas alineadas estrictamente al esquema nacional real (La Serena/Coquimbo)
     const direcciones = await Direccion.insertMany([
       { calle: 'Avenida Francisco de Aguirre', numero: '450', comuna: 'La Serena', ciudad: 'La Serena' },
-      { calle: 'Calle Aldunate', numero: '1025', comuna: 'Coquimbo', ciudad: 'Coquimbo' },
-      { calle: 'Avenida Juan Cisternas', numero: '2380', comuna: 'La Serena', ciudad: 'La Serena' },
-      { calle: 'Calle Videla', numero: '742', comuna: 'Coquimbo', ciudad: 'Coquimbo' },
-      { calle: 'Calle Alberto Solari', numero: '300', comuna: 'La Serena', ciudad: 'La Serena' },
-      { calle: 'Avenida El Culebrón', numero: '15', comuna: 'Coquimbo', ciudad: 'Coquimbo' }
+     // { calle: 'Calle Aldunate', numero: '1025', comuna: 'Coquimbo', ciudad: 'Coquimbo' },
+     // { calle: 'Avenida Juan Cisternas', numero: '2380', comuna: 'La Serena', ciudad: 'La Serena' },
+     // { calle: 'Calle Videla', numero: '742', comuna: 'Coquimbo', ciudad: 'Coquimbo' },
+     // { calle: 'Calle Alberto Solari', numero: '300', comuna: 'La Serena', ciudad: 'La Serena' },
+     // { calle: 'Avenida El Culebrón', numero: '15', comuna: 'Coquimbo', ciudad: 'Coquimbo' }
     ]);
 
     // 3. Insertar una nómina con RUTs, nombres y fechas de nacimiento totalmente NUEVOS
@@ -73,11 +75,11 @@ const runSeed = async () => {
     direccion_id: direcciones[1]._id
   },*/
   {
-    rut: formatearRutSeed('20324742-5'),
-    nombre: 'Nicolas Pedro Aguirre Godoy',
-    fecha_nacimiento: new Date('1980-06-02'),
+    rut: formatearRutSeed('18576752-1'),
+    nombre: 'Fabian Andres Garcia Mendez',
+    fecha_nacimiento: new Date('1996-03-01'),
     centro_salud_id: centro._id,
-    direccion_id: direcciones[2]._id
+    direccion_id: direcciones[0]._id
   }
 ], { ordered: false });
 
@@ -85,21 +87,21 @@ const runSeed = async () => {
     // 4. Diagnósticos clínicos realistas con códigos CIE-10 estrictos
     const diagnosticosBase = [
       { descripcion: 'Infección de vías urinarias, sitio no especificado (Cistitis aguda sintomática en evolución)', codigo_enfermedad: 'N39.0' },
-      { descripcion: 'Lumbago no especificado (Dorsalgia lumbar aguda por esfuerzo físico moderado)', codigo_enfermedad: 'M54.5' },
-      { descripcion: 'Amigdalitis aguda, no especificada (Cuadro congestivo purulento con odinofagia severa)', codigo_enfermedad: 'J03.9' },
-      { descripcion: 'Bronquitis aguda, no especificada (Sintomatología respiratoria obstructiva leve sin apremio respiratorio)', codigo_enfermedad: 'J20.9' },
-      { descripcion: 'Diabetes mellitus no insulinodependiente (Control metabólico preventivo de rutina)', codigo_enfermedad: 'E11.9' },
-      { descripcion: 'Cefalea debida a tensión, de tipo tensional crónica (Episodio agudo tensional asociado a estrés)', codigo_enfermedad: 'G44.2' }
+      //{ descripcion: 'Lumbago no especificado (Dorsalgia lumbar aguda por esfuerzo físico moderado)', codigo_enfermedad: 'M54.5' },
+      //{ descripcion: 'Amigdalitis aguda, no especificada (Cuadro congestivo purulento con odinofagia severa)', codigo_enfermedad: 'J03.9' },
+      //{ descripcion: 'Bronquitis aguda, no especificada (Sintomatología respiratoria obstructiva leve sin apremio respiratorio)', codigo_enfermedad: 'J20.9' },
+      //{ descripcion: 'Diabetes mellitus no insulinodependiente (Control metabólico preventivo de rutina)', codigo_enfermedad: 'E11.9' },
+      //{ descripcion: 'Cefalea debida a tensión, de tipo tensional crónica (Episodio agudo tensional asociado a estrés)', codigo_enfermedad: 'G44.2' }
     ];
 
     // 5. Motivos de consulta médica correlativos actualizados
     const motivosConsulta = [
       'Paciente femenina consulta por disuria intensa de 48 horas de evolución, asociado a poliaquiuria y tenesmo vesical leve. Niega fiebre alta.',
-      'Varón refiere dolor punzante en zona lumbar baja tras levantar carga pesada en su lugar de trabajo hace 12 horas. Limitación de movimiento.',
-      'Consulta por odinofagia severa que impide deglución normal de alimentos, acompañado de calofríos y cefalea frontal difusa.',
-      'Paciente refiere tos productiva con expectoración mucosa de 5 días de evolución, asociado a sibilancias audibles intermitentes en reposo.',
-      'Asiste a control crónico programado. Trae exámenes de laboratorio con glicemia en ayunas levemente elevada. Buen estado general.',
-      'Refiere cefalea holocraneana de tipo opresiva de intensidad moderada que no cede con analgésicos comunes de uso doméstico.'
+      //'Varón refiere dolor punzante en zona lumbar baja tras levantar carga pesada en su lugar de trabajo hace 12 horas. Limitación de movimiento.',
+      //'Consulta por odinofagia severa que impide deglución normal de alimentos, acompañado de calofríos y cefalea frontal difusa.',
+      //'Paciente refiere tos productiva con expectoración mucosa de 5 días de evolución, asociado a sibilancias audibles intermitentes en reposo.',
+      //'Asiste a control crónico programado. Trae exámenes de laboratorio con glicemia en ayunas levemente elevada. Buen estado general.',
+      //'Refiere cefalea holocraneana de tipo opresiva de intensidad moderada que no cede con analgésicos comunes de uso doméstico.'
     ];
 
     // 6. Ciclo transaccional coordinado para inyectar los expedientes híbridos
