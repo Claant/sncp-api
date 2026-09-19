@@ -20,7 +20,7 @@ export const crearDiagnostico = async (req, res) => {
     // CORRECCIÓN: Resolvemos la conexión en caliente desde el getter ESM
     const connProd = dbConfig.getConnProd();
     if (!connProd) {
-      return res.status(503).json({ msg: "Base de datos de producción no disponible temporalmente." });
+      return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible temporalmente." });
     }
 
     // Instanciamos el modelo dinámico en el pool de producción
@@ -54,7 +54,7 @@ export const obtenerDiagnosticoPorAtencion = async (req, res) => {
     // CORRECCIÓN: Resolvemos la conexión en caliente desde el getter ESM
     const connProd = dbConfig.getConnProd();
     if (!connProd) {
-      return res.status(503).json({ msg: "Base de datos de producción no disponible temporalmente." });
+      return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible temporalmente." });
     }
 
     // Inicialización y enlace estricto con tus colecciones reales en el Pool activo

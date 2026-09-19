@@ -61,7 +61,7 @@ export const crearAtencion = async (req, res) => {
     const idMedicoAutenticado = req.usuario?._id || req.user?._id || req.usuario?.id || req.user?.id || null;
 
     if (!idMedicoAutenticado) {
-      return res.status(401).json({ msg: "No se pudo verificar la identidad del médico que autoriza." });
+      return res.status(401).json({ msg: "No se pudo verificar la identidad del médico que autoriza" });
     }
 
     const nuevaAtencion = new AtencionMedicaProd({
@@ -126,7 +126,7 @@ export const obtenerHistorialPaciente = async (req, res) => {
         // 1. Extraer los datos demográficos básicos del paciente local
         const pacienteLocal = await PacienteProd.findById(pacienteId).populate("direccion_id").lean();
         if (!pacienteLocal) {
-            return res.status(404).json({ msg: "Paciente no registrado en los índices asistenciales locales." });
+            return res.status(404).json({ msg: "Paciente no registrado en la base de datos local (sistema-informacion-clinica) de este centro de salud" });
         }
 
         // 2. Extraer el historial de consultas cronológicas locales de producción
@@ -182,7 +182,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
 
     const connProd = dbConfig.getConnProd();
     if (!connProd) {
-        return res.status(503).json({ error: "DbError", msg: "Base de datos de producción no disponible para operaciones compuestas." });
+        return res.status(503).json({ error: "DbError", msg: "Base de datos sistema-informacion-clinica no disponible para operaciones compuestas" });
     }
 
     // Generar la sesión apuntando de forma estricta al pool connProd
@@ -198,7 +198,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
         if (pacienteExiste) {
             await session.abortTransaction();  
             session.endSession();
-            return res.status(400).json({ msg: 'El RUT de este paciente ya figura en el Sistema Nacional Clínico.' });
+            return res.status(400).json({ msg: 'El RUT de este paciente ya existe en los registros de la base de datos sistema-informacion-clinica de este centro médico.' });
         }
 
         const nuevaDireccion = new DireccionProd({ calle, numero, comuna, ciudad });
@@ -235,7 +235,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
         session.endSession();
 
         return res.status(201).json({
-            msg: 'Expediente clínico integral registrado exitosamente en el sistema nacional.',
+            msg: 'Expediente clínico registrado con exito en la base de datos de este centro médico',
             paciente_id: pacienteGuardado._id,
             atencion_id: atencionGuardada._id
         });
@@ -284,7 +284,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
                     descripcion
                 });
 
-               console.log('🚀 Contingencia local completada exitosamente en el Pool activo.');
+               console.log('Contingencia local completada exitosamente en el Pool activo.');
 
                 return res.status(201).json({
                     msg: 'Expediente clínico registrado exitosamente (Modo Resiliente Local).',

@@ -75,7 +75,7 @@ export const crearPaciente = async (req, res) => {
     try {
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
-            return res.status(503).json({ error: "DbError", msg: "Base de datos de producción no disponible temporalmente." });
+            return res.status(503).json({ error: "DbError", msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible temporalmente." });
         }
 
         const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
@@ -188,7 +188,7 @@ export const obtenerPacientePorRut = async (req, res) => {
     if (!pacienteExterno) {
       return res.status(404).json({
         origen: "ninguno",
-        msg: "El RUT ingresado no figura registrado en ningún nodo clínico del ecosistema.",
+        msg: "El RUT ingresado no mantiene registros en este centro médico ni tampoco externo",
         fhirBundle: null
       });
     }
@@ -202,12 +202,12 @@ export const obtenerPacientePorRut = async (req, res) => {
 
     return res.status(200).json({
       origen: "externo",
-      msg: "Paciente externo transformado exitosamente al estándar internacional HL7 FHIR desde sistema-informacion-clinica-demo.",
+      msg: "Ficha clínica externa desde la base de datos sistema-informacion-clinica-demo, transformado con exito al estándar HL7 FHIR.",
       fhirBundle: fhirBundleExterno
     });
 
   } catch (error) {
-    console.error("❌ EXCEPCIÓN REAL CAPTURADA EN LA PASARELA PACIENTES FHIR:", error.stack);
+    console.error("❌ EXCEPCIÓN REAL CAPTURADA EN LA PLATAFORMA DE PACIENTES FHIR:", error.stack);
     return res.status(500).json({ error: "InternalServerError", msg: "Conflicto de procesamiento interoperable." });
   }
 };

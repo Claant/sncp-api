@@ -32,7 +32,7 @@ router.post('/:expedienteId/atenciones', agregarAtencion);
 // Consulta tradicional que extrae el formato nativo documental de MongoDB
 router.get('/paciente/:pacienteId', obtenerExpedientePorPaciente);
 
-// 🚀 RUTA MAESTRA DE INTEROPERABILIDAD: 
+// RUTA MAESTRA DE INTEROPERABILIDAD: 
 // Esta ruta unificada resuelve el flujo federado. Transforma a FHIR Bundle 
 // si los datos se encuentran en el nodo local (Prod) O en el clúster externo (Demo).
 router.get('/paciente/:pacienteId/fhir', obtenerExpedienteFHIR);

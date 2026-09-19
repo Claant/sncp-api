@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import * as dbConfig from '../config/db.js'; // 🔹 Cambiado para usar el getter dinámico
+import * as dbConfig from '../config/db.js'; // Cambiado para usar el getter dinámico
 import { usuarioSchema } from '../models/Usuario.js'; 
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';

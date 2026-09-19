@@ -36,7 +36,7 @@ export const crearUsuario = async (req, res) => {
         // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
-            return res.status(503).json({ msg: "Base de datos de producción no disponible temporalmente." });
+            return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible temporalmente." });
         }
 
         // Enlazar dinámicamente el modelo al pool activo de producción
@@ -91,7 +91,7 @@ export const obtenerUsuarios = async (req, res) => {
         // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
-            return res.status(503).json({ msg: "Base de datos de producción no disponible." });
+            return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible." });
         }
 
         const UsuarioProd = connProd.models.Usuario || connProd.model('Usuario', usuarioSchema, 'usuarios');
@@ -194,7 +194,7 @@ export const editarUsuarioMedico = async (req, res) => {
         // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
-            return res.status(503).json({ msg: "Base de datos fuera de línea temporalmente." });
+            return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser fuera de línea temporalmente." });
         }
 
         const UsuarioProd = connProd.models.Usuario || connProd.model('Usuario', usuarioSchema, 'usuarios');
@@ -234,7 +234,7 @@ export const eliminarUsuarioDefinitivo = async (req, res) => {
         // CORRECCIÓN: Resolvemos el pool mediante el getter dinámico
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
-            return res.status(503).json({ msg: "Base de datos fuera de línea temporalmente." });
+            return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser fuera de línea temporalmente." });
         }
 
         const UsuarioProd = connProd.models.Usuario || connProd.model('Usuario', usuarioSchema, 'usuarios');

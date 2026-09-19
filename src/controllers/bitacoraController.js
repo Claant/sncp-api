@@ -84,7 +84,7 @@ export const registrarAcceso = async (req, res) => {
     await nuevoLogAcceso.save();
 
     return res.status(201).json({ 
-      msg: "Acceso clínico auditado e inyectado con éxito en la bitácora nacional.", 
+      msg: "Acceso clínico auditado e inyectado con éxito en la bitácora de este centro médico", 
       acceso: nuevoLogAcceso 
     });
 

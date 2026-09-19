@@ -23,11 +23,11 @@ export const crearCentroSalud = async (req, res) => {
 
     if (!connProd) {
       console.error(
-        "⚠️ Error: El pool de conexiones connProd no está inicializado en centroSaludController.",
+        "⚠️ Error: El pool de conexiones de la base de datos connProd (sistema-informacion-clinica) no está inicializado en centroSaludController.",
       );
       return res
         .status(503)
-        .json({ msg: "Base de datos desconectada temporalmente." });
+        .json({ msg: "Base de datos sistema-informacion-clinica desconectada temporalmente." });
     }
 
     // Enlazar dinámicamente el modelo de creación al pool activo de producción
@@ -45,7 +45,7 @@ export const crearCentroSalud = async (req, res) => {
     await nuevoCentro.save();
 
     return res.status(201).json({
-      msg: "Establecimiento asistencial dado de alta exitosamente en la Red Nacional.",
+      msg: "Establecimiento asistencial dado de alta exitosamente",
       centro: nuevoCentro,
     });
   } catch (error) {
@@ -68,7 +68,7 @@ export const obtenerCentrosSalud = async (req, res) => {
 
     if (!connProd) {
       console.error(
-        "⚠️ Error: El pool de conexiones connProd no está inicializado en centroSaludController.",
+        "⚠️ Error: El pool de conexiones connProd (sistema-informacion-clinica) no está inicializado en centroSaludController.",
       );
       return res
         .status(503)

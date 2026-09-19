@@ -53,7 +53,7 @@ export const obtenerExpedientePorPaciente = async (req, res) => {
     }
     const pacienteObjectId = new mongoose.Types.ObjectId(pacienteId);
     const connProd = dbConfig.getConnProd();
-    if (!connProd) return res.status(503).json({ msg: "Base de datos desconectada." });
+    if (!connProd) return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser desconectada." });
     const { ExpedienteProd, AtencionMedicaProd, DiagnosticoProd, BitacoraAccesoProd } = getModelosProd(connProd);
     
     if (!connProd.models.Paciente) connProd.model("Paciente", pacienteSchema, "pacientes");
@@ -95,7 +95,7 @@ export const agregarAtencion = async (req, res) => {
   }
   try {
     const connProd = dbConfig.getConnProd();
-    if (!connProd) return res.status(503).json({ msg: "Base de datos desconectada." });
+    if (!connProd) return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser desconectada." });
     const { ExpedienteProd, AtencionMedicaProd } = getModelosProd(connProd);
     const expediente = await ExpedienteProd.findById(expedienteId);
     if (!expediente) {
@@ -136,7 +136,7 @@ export const obtenerExpedienteFHIR = async (req, res) => {
     const connProd = dbConfig.getConnProd();
     const connDemo = dbConfig.getConnDemo();
 
-    if (!connProd) return res.status(503).json({ msg: "Base de datos producción desconectada." });
+    if (!connProd) return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser desconectada." });
     const { ExpedienteProd } = getModelosProd(connProd);
 
     if (!connProd.models.Paciente) connProd.model("Paciente", pacienteSchema, "pacientes");
@@ -153,7 +153,7 @@ export const obtenerExpedienteFHIR = async (req, res) => {
     // B. Conmutación en caliente al clúster remoto DEMO si falta información local
     if (!expedienteRaw || !expedienteRaw.atenciones || expedienteRaw.atenciones.length === 0) {
       if (!connDemo) {
-        return res.status(500).json({ error: "Repositorio DEMO externo no disponible para federación." });
+        return res.status(500).json({ error: "Base de datos sistema-informacion-clinica-demo no disponible para conexión." });
       }
 
       const ExpedienteDemo = connDemo.models.Expediente || connDemo.model("Expediente", expedienteSchema, "expedientes");
@@ -169,11 +169,11 @@ export const obtenerExpedienteFHIR = async (req, res) => {
     }
 
     if (!expedienteRaw) {
-      return res.status(404).json({ error: "El paciente no registra eventos médicos en ningún nodo clínico." });
+      return res.status(404).json({ error: "El paciente no registra fichas clínicas en ningun centro médico externo" });
     }
 
     // ====================================================================
-    // 🚀 SERIALIZACIÓN DE INTEROPERABILIDAD: MONGO JSON ➡️ HL7 FHIR BUNDLE
+    // SERIALIZACIÓN DE INTEROPERABILIDAD: MONGO JSON ➡️ HL7 FHIR BUNDLE
     // ====================================================================
     const fhirBundle = {
       resourceType: "Bundle",
@@ -232,7 +232,7 @@ export const obtenerExpedienteFHIR = async (req, res) => {
 
     return res.status(200).json(fhirBundle);
   } catch (error) {
-    console.error("⚠️ Error crítico en la pasarela traductora FHIR:", error.message);
+    console.error("⚠️ Error crítico en la plataforma traductora FHIR:", error.message);
     return res.status(500).json({ error: "InternalServerError", detalle: error.message });
   }
 };
@@ -246,7 +246,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
     return res.status(400).json({ msg: "No se proporcionó un paquete de datos clínico válido para importar." });
   }
   const connProd = dbConfig.getConnProd();
-  if (!connProd) return res.status(503).json({ msg: "Base de datos de producción no disponible." });
+  if (!connProd) return res.status(503).json({ msg: "Base de datos de sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible." });
 
   const session = await connProd.startSession();
   session.startTransaction();
@@ -345,9 +345,9 @@ export const crearAtencionFichaNueva = async (req, res) => {
         await session.abortTransaction();
     }
     session.endSession();
-    console.error("⚠️ Fallo transaccional en la inyección de la pasarela FHIR:", error.message);
+    console.error("⚠️ Fallo transaccional en la inyección de la plataforma FHIR:", error.message);
     return res.status(500).json({ 
-      msg: "Error transaccional en la pasarela al persistir el expediente.", 
+      msg: "Error transaccional en la plataforma al persistir el expediente.", 
       detalle: error.message 
     });
   }

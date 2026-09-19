@@ -23,7 +23,7 @@ export const crearDireccion = async (req, res) => {
         const connProd = dbConfig.getConnProd();
 
         if (!connProd) {
-            console.error("⚠️ Error: El pool de conexiones connProd no está inicializado en direccionController.");
+            console.error("⚠️ Error: El pool de conexiones de la base de datos connProd (sistema-informacion-clinica) no está inicializado en direccionController.");
             return res.status(503).json({ msg: "Base de datos desconectada temporalmente." });
         }
 
@@ -58,8 +58,8 @@ export const obtenerDireccionPorId = async (req, res) => {
         const connProd = dbConfig.getConnProd();
 
         if (!connProd) {
-            console.error("⚠️ Error: El pool de conexiones connProd no está inicializado en direccionController.");
-            return res.status(503).json({ msg: "Base de datos desconectada temporalmente." });
+            console.error("⚠️ Error: El pool de conexiones connProd (sistema-informacion-clinica) no está inicializado en direccionController.");
+            return res.status(503).json({ msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser desconectada temporalmente." });
         }
 
         // Enlazar de forma estricta el modelo de lectura al pool activo

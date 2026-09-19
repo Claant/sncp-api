@@ -16,7 +16,7 @@ export const generarDauPDF = (res, datosUnificados) => {
   const { paciente, atencion, diagnostico, centro } = datosUnificados;
 
   // ====================================================================
-  // 🏛️ DISEÑO VISUAL: CABECERA INSTITUTIONAL CHILENA
+  // DISEÑO VISUAL: CABECERA INSTITUTIONAL CHILENA
   // ====================================================================
   doc.rect(40, 40, 532, 4).fill('#10b981'); // Verde Turquesa Asistencial
   doc.fillColor('#000000');
@@ -37,7 +37,7 @@ export const generarDauPDF = (res, datosUnificados) => {
   doc.fontSize(13).font('Helvetica-Bold').fillColor('#0f172a').text('REGISTRO CLÍNICO UNIFICADO INTEROPERABLE', 40, 125, { align: 'center' });
 
   // ====================================================================
-  // 👥 BLOQUE 1: ANTECEDENTES DEMOGRÁFICOS (Recurso: Patient + Location)
+  // BLOQUE 1: ANTECEDENTES DEMOGRÁFICOS (Recurso: Patient + Location)
   // ====================================================================
   doc.rect(40, 145, 532, 20).fill('#f1f5f9');
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text('1. ANTECEDENTES DEMOGRÁFICOS DEL PACIENTE', 45, 151);
@@ -56,7 +56,7 @@ export const generarDauPDF = (res, datosUnificados) => {
   doc.font('Helvetica').fillColor('#334155').text(paciente.direccion, 135, 215);
 
   // ====================================================================
-  // 🩺 BLOQUE 2: EVOLUCIÓN ASISTENCIAL EN URGENCIAS (Recurso: Encounter)
+  // BLOQUE 2: EVOLUCIÓN ASISTENCIAL EN URGENCIAS (Recurso: Encounter)
   // ====================================================================
   doc.rect(40, 240, 532, 20).fill('#f1f5f9');
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text('2. ANTECEDENTES DE LA ATENCIÓN Y ENCUENTRO MÉDICO', 45, 246);
@@ -71,7 +71,7 @@ export const generarDauPDF = (res, datosUnificados) => {
   doc.font('Helvetica').fillColor('#475569').text(atencion.motivo_consulta, 44, 310, { width: 522, align: 'justify', lineGap: 3 });
 
   // ====================================================================
-  // 🧫 BLOQUE 3: CONCLUSIÓN PATOLÓGICA DE ALTA (Recurso: Condition CIE-10)
+  // BLOQUE 3: CONCLUSIÓN PATOLÓGICA DE ALTA (Recurso: Condition CIE-10)
   // ====================================================================
   doc.rect(40, 365, 532, 20).fill('#f1f5f9');
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text('3. DIAGNÓSTICO MÉDICO ASOCIADO (ESTÁNDAR INTEROPERABLE)', 45, 371);
@@ -82,7 +82,7 @@ export const generarDauPDF = (res, datosUnificados) => {
   doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(diagnostico.descripcion.toUpperCase(), 130, 410, { width: 430 });
 
   // ====================================================================
-  // 🔒 BLOQUE 4: TRAZA FORENSE LEGAL Y REGISTRO DE RECEPCIÓN
+  // BLOQUE 4: TRAZA FORENSE LEGAL Y REGISTRO DE RECEPCIÓN
   // ====================================================================
   doc.rect(40, 460, 532, 20).fill('#f1f5f9');
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e293b').text('4. CERTIFICACIÓN DE LECTURA Y CONFORMIDAD ASISTENCIAL', 45, 466);

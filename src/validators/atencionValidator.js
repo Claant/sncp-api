@@ -32,7 +32,7 @@ export const crearAtencionFichaNuevaSchema = z.object({
   comuna: z.string({ required_error: "La comuna es obligatoria." }).trim(),
   ciudad: z.string({ required_error: "La ciudad es obligatoria." }).trim(),
   
-  // 🚀 CORREGIDO: Usamos el RUT como identificador primario del formulario de Vue
+  // CORREGIDO: Usamos el RUT como identificador primario del formulario de Vue
   rut: z.string({ required_error: "El RUT nacional es obligatorio." }).trim(),
   
   nombre: z.string({ required_error: "El nombre completo es obligatorio." }).trim(),

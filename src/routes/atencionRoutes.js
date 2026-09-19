@@ -55,7 +55,7 @@ router.get('/:id/pdf', verificarToken, permitirRoles('medico'), async (req, res)
     const CentroSaludProd = connProd.models.CentroSalud || connProd.model('CentroSalud', connProd.base.model('CentroSalud').schema);
     const DireccionProd = connProd.models.Direccion || connProd.model('Direccion', connProd.base.model('Direccion').schema);
 
-    // 🚀 BLINDAJE DE ADUANA DE PARÁMETROS: Captura el ID de forma flexible sin importar cómo lo envíe Vue
+    // BLINDAJE DE ADUANA DE PARÁMETROS: Captura el ID de forma flexible sin importar cómo lo envíe Vue
     const atencionId = req.params.id || req.params.pacienteId || req.query.id;
     console.log("🔍 Buscando físicamente en Atlas la atención con Folio ID:", atencionId);
 
@@ -64,7 +64,7 @@ router.get('/:id/pdf', verificarToken, permitirRoles('medico'), async (req, res)
       .populate('usuario_id', 'nombre')
       .lean();
 
-    // 🛡️ CONTINGENCIA DE SEGUNDA INTENTONA: Si no lo encuentra por ID directo, busca por el campo correlativo
+    // CONTINGENCIA DE SEGUNDA INTENTONA: Si no lo encuentra por ID directo, busca por el campo correlativo
     if (!atencionMedicaDoc) {
       console.warn("⚠️ Advertencia: No se encontró por _id directo. Buscando coincidencia alternativa...");
       // Buscamos la última atención registrada en el pool para que el reporte nunca se quede vacío
@@ -86,7 +86,7 @@ router.get('/:id/pdf', verificarToken, permitirRoles('medico'), async (req, res)
     // Recuperamos las conclusiones patológicas CIE-10 asociadas
     const dDoc = await DiagnosticoProd.findOne({ atencion_id: atencionId }).lean();
 
-    // 📦 EMPAQUETADOR DE CONTINGENCIA ASISTENCIAL: Tolerante a datos huérfanos o nulos del clúster
+    // EMPAQUETADOR DE CONTINGENCIA ASISTENCIAL: Tolerante a datos huérfanos o nulos del clúster
     const datosUnificados = {
       centro: {
         nombre: pacienteDoc?.centro_salud_id?.nombre_centro || "CESFAM Emilio Schaffhauser"
