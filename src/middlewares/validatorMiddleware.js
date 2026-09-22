@@ -16,7 +16,8 @@ export const validarEsquema = (schema) => (req, res, next) => {
     if (error instanceof ZodError) {
       return res.status(400).json({
         error: "ValidationError",
-        msg: "El payload JSON de entrada no cumple con las reglas estrictas de sanitización asistencial",
+        // Mensaje directo para la cabecera de la alerta
+        msg: "Por favor revise los campos del formulario antes de continuar.",
         // CORRECCIÓN CRÍTICA: Cambiamos 'error.errors' por 'error.issues' que es el estándar de Zod
         detalles: (error.issues || []).map(err => ({
           campo: err.path.join('.'),

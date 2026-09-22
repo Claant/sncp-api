@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import express from 'express';
 import { generarDauPDF } from '../utils/pdfGenerator.js';
 
-// 🚀 IMPORTACIONES MAESTRAS DE MODELOS: Obliga a Mongoose a precompilar las estructuras lógicas
+// IMPORTACIONES MAESTRAS DE MODELOS: Obliga a Mongoose a precompilar las estructuras lógicas
 import AtencionMedica from '../models/AtencionMedica.js';
 import Paciente from '../models/Paciente.js';
 import Diagnostico from '../models/Diagnostico.js';

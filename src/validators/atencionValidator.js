@@ -10,7 +10,7 @@ export const crearAtencionSchema = z.object({
     .regex(/^[0-9a-fA-F]{24}$/, "El paciente_id provisto debe ser un ObjectId de MongoDB válido."),
   
   motivo_consulta: z.string({ required_error: "El motivo de la consulta médica es mandatorio." })
-    .min(5, "El motivo de consulta debe ser clínico y descriptivo (mínimo 5 caracteres).")
+    .min(10, "El motivo de consulta debe ser clínico y descriptivo (mínimo 10 caracteres).")
     .trim(),
   
   codigo_enfermedad: z.string({ required_error: "El código de enfermedad estandarizado es obligatorio." })
@@ -18,7 +18,7 @@ export const crearAtencionSchema = z.object({
     .trim(),
   
   descripcion: z.string({ required_error: "La descripción diagnóstica detallada es obligatoria." })
-    .min(3, "La descripción del cuadro patológico debe ser explícita (mínimo 3 caracteres).")
+    .min(10, "La descripción del cuadro patológico debe ser explícita (mínimo 10 caracteres).")
     .trim()
 });
 
@@ -39,12 +39,12 @@ export const crearAtencionFichaNuevaSchema = z.object({
   fecha_nacimiento: z.string({ required_error: "La fecha de nacimiento es obligatoria." }),
   
   centro_salud_id: z.string({ required_error: "El centro_salud_id es requerido." })
-    .regex(/^[0-9a-fA-F]{24}$/, "El ID del centro de salud debe ser un ObjectId válido."),
+    .regex(/^[0-9a-fA-F]{24}$/, "El ID del centro de salud no válido."),
   
-  motivo_consulta: z.string({ required_error: "El motivo de consulta es obligatorio." }).min(5).trim(),
+  motivo_consulta: z.string({ required_error: "El motivo de consulta es obligatorio." }).min(10,"El motivo de consulta debe contener al menos 5 caracteres descriptivos.").trim(),
   
   codigo_enfermedad: z.string({ required_error: "El código CIE-10 es requerido." })
     .regex(/^[A-Z][0-9]{2}(\.[0-9])?$/, "El código debe cumplir con el formato internacional CIE-10 (Ej: M79.6)."),
   
-  descripcion: z.string({ required_error: "La descripción es requerida." }).min(3).trim()
+  descripcion: z.string({ required_error: "La descripción es requerida." }).min(10,"La descripción del diagnóstico debe contener al menos 3 caracteres.").trim()
 });
