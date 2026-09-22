@@ -47,7 +47,7 @@ router.post('/', verificarToken, permitirRoles('medico'), validarEsquema(crearAt
 router.get('/:id/pdf', verificarToken, permitirRoles('medico'), async (req, res) => {
   try {
     const connProd = getConnProd(); 
-    if (!connProd) return res.status(503).json({ msg: "Base de datos de producción no disponible." });
+    if (!connProd) return res.status(503).json({ msg: "Base de datos de local no disponible." });
 
     const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model('AtencionMedica', connProd.base.model('AtencionMedica').schema);
     const PacienteProd = connProd.models.Paciente || connProd.model('Paciente', connProd.base.model('Paciente').schema);
@@ -115,7 +115,7 @@ router.get('/:id/pdf', verificarToken, permitirRoles('medico'), async (req, res)
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=DAU-Folio-${atencionId.slice(-6).toUpperCase()}.pdf`);
 
-    // 🔥 GATILLAMOS EL MOTOR GRÁFICO: Transmite el PDF directo al stream de red de Express
+    // GATILLAMOS EL MOTOR GRÁFICO: Transmite el PDF directo al stream de red de Express
     generarDauPDF(res, datosUnificados);
 
   } catch (error) {

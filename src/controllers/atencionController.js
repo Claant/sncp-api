@@ -198,7 +198,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
         if (pacienteExiste) {
             await session.abortTransaction();  
             session.endSession();
-            return res.status(400).json({ msg: 'El RUT de este paciente ya existe en los registros de la base de datos sistema-informacion-clinica de este centro médico.' });
+            return res.status(400).json({ msg: 'El RUT de este paciente ya existe en los registros de la base de datos sistema-informacion-clinica de este CESFAM' });
         }
 
         const nuevaDireccion = new DireccionProd({ calle, numero, comuna, ciudad });

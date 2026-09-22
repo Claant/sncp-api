@@ -188,7 +188,7 @@ export const obtenerPacientePorRut = async (req, res) => {
     if (!pacienteExterno) {
       return res.status(404).json({
         origen: "ninguno",
-        msg: "El RUT ingresado no mantiene registros en este centro médico ni tampoco externo",
+        msg: "El RUT ingresado no mantiene registros en este CESFAM",
         fhirBundle: null
       });
     }
