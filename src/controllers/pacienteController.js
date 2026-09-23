@@ -13,14 +13,20 @@ import { bitacoraSchema } from "../models/BitacoraAcceso.js";
 import { usuarioSchema } from "../models/Usuario.js"; 
 import { construirFHIRBundle } from "../utils/fhirMapper.js"; // Función de interoperabilidad HL7 FHIR
 
-// FUNCIÓN AUXILIAR MAESTRA UNIFICADA: Asegura el formato de forma estricta (ej: 12345678-K)
-const limpiarRut = (rutRaw) => {
-    if (!rutRaw) return '';
-    let limpio = rutRaw.replace(/[^0-9kK]/g, '').toUpperCase();
-    if (limpio.length < 2) return limpio;
-    const cuerpo = limpio.slice(0, -1);
-    const dv = limpio.slice(-1);
-    return `${cuerpo}-${dv}`; 
+/**
+ * Limpia y empaqueta el RUT agregando el guion antes del dígito verificador (DV)
+ * Ejemplo: "12.345.678k" -> "12345678-K"
+ */
+export const limpiarRut = (rutRaw) => {
+  if (!rutRaw || typeof rutRaw !== 'string') return '';
+  
+  // Extrae únicamente números y la letra K (mayúscula o minúscula)
+  let limpio = rutRaw.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 2) return limpio;
+  
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  return `${cuerpo}-${dv}`; 
 };
 
 // FUNCIÓN AUXILIAR DE INTEROPERABILIDAD: Mapper de Paciente local a Recurso HL7 FHIR
