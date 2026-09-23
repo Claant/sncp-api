@@ -18,7 +18,7 @@ export const validarEsquema = (schema) => (req, res, next) => {
         error: "ValidationError",
         // Mensaje directo para la cabecera de la alerta
         msg: "Por favor revise los campos del formulario antes de continuar.",
-        // CORRECCIÓN CRÍTICA: Cambiamos 'error.errors' por 'error.issues' que es el estándar de Zod
+        // Mapeamos únicamente el mensaje claro que configuramos en Zod  
         detalles: (error.issues || []).map(err => ({
           campo: err.path.join('.'),
           mensaje: err.message
@@ -30,7 +30,7 @@ export const validarEsquema = (schema) => (req, res, next) => {
     console.error("❌ Excepción genérica interceptada", error.message);
     return res.status(500).json({
       error: "InternalServerError",
-      msg: "Ocurrió un conflicto inesperado al sanitizar el formulario."
+      msg: "Ocurrió un conflicto inesperado al procesar la información."
     });
   }
 };
