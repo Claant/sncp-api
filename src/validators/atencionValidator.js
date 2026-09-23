@@ -19,7 +19,7 @@ export const crearAtencionSchema = z.object({
     .trim(),
   
   descripcion: z.string({ required_error: "La descripción diagnóstica detallada es obligatoria." })
-    .min(10, "VALIDACION NUEVA: La descripción del cuadro patológico debe ser explícita (mínimo 10 caracteres).")
+    .min(10, "La descripción del cuadro patológico debe ser explícita (mínimo 10 caracteres).")
     .trim()
 });
 
@@ -47,5 +47,5 @@ export const crearAtencionFichaNuevaSchema = z.object({
   codigo_enfermedad: z.string({ required_error: "El código CIE-10 es requerido." })
     .regex(/^[A-Z][0-9]{2}(\.[0-9])?$/, "El código debe cumplir con el formato internacional CIE-10 (Ej: M79.6)."),
   
-  descripcion: z.string({ required_error: "La descripción es requerida." }).min(10,"VALIDACION NUEVA: La descripción del diagnóstico debe contener al menos 10 caracteres.").trim()
+  descripcion: z.string({ required_error: "La descripción es requerida." }).min(10,"La descripción del diagnóstico debe contener al menos 10 caracteres.").trim()
 });
