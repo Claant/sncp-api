@@ -9,17 +9,16 @@ export const limpiarRut = (rut) => {
 };
 
 /**
- * Valida que la estructura del RUT tenga entre 8 y 9 caracteres limpios,
- * permitiendo formato con o sin puntos (ej: 12.345.678K o 12345678K)
+ * Valida la estructura del RUT formateado con guion
+ * Exige:
+ * - Mínimo 8 dígitos en total (7 u 8 de cuerpo + 1 DV) -> Resultado limpio con guion: "1234567-8" o "12345678-K"
+ * - Formato: números antes del guion y un dígito (0-9) o K después del guion
  */
-export const validarRutChileno = (rut) => {
-  const rutLimpio = limpiarRut(rut);
+export const validarRutChileno = (rutRaw) => {
+  const rutConGuion = limpiarRut(rutRaw);
 
-  // Largo mínimo 8 y máximo 9 (ej: 7 u 8 dígitos + DV)
-  if (rutLimpio.length < 8 || rutLimpio.length > 9) return false;
+  // Verificación de formato con guion: entre 7 y 8 dígitos antes del guion, y un DV (0-9 o K)
+  const patronRut = /^\d{7,8}-[0-9K]$/;
 
-  // Estructura: 7 a 8 números seguidos de un dígito (0-9) o la letra K
-  const patronRut = /^\d{7,8}[0-9K]$/;
-
-  return patronRut.test(rutLimpio);
+  return patronRut.test(rutConGuion);
 };
