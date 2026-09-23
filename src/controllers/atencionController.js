@@ -144,7 +144,7 @@ export const obtenerHistorialPaciente = async (req, res) => {
         }).lean();
 
         // ====================================================================
-        // 🚀 CAPA DE TRADUCCIÓN INTEROPERABLE: MONGO LOCAL JSON ➡️ HL7 FHIR BUNDLE
+        // CAPA DE TRADUCCIÓN INTEROPERABLE: MONGO LOCAL JSON ➡️ HL7 FHIR BUNDLE
         // ====================================================================
         const fhirBundleLocal = construirFHIRBundle(pacienteLocal, historialAtenciones, diagnosticosLocales);
 
