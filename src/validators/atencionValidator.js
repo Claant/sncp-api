@@ -1,11 +1,13 @@
 // src/validators/atencionValidator.js
 import { z } from 'zod';
+import {validarRutChileno, limpiarRut} from '../utils/rutValidator.js'
 
 /**
  * REGLA 1: Para consultas tradicionales de pacientes recurrentes (POST /)
  * Validada perimetralmente con la aduana genérica de Express
  */
-console.log("🔥 CARGANDO ZOD CON REGLA DE 10 CARACTERES - PORTO 4001");
+
+
 export const crearAtencionSchema = z.object({
   paciente_id: z.string({ required_error: "El identificador del paciente (paciente_id) es obligatorio." })
     .regex(/^[0-9a-fA-F]{24}$/, "El paciente_id provisto debe ser un ObjectId de MongoDB válido."),
@@ -34,7 +36,11 @@ export const crearAtencionFichaNuevaSchema = z.object({
   ciudad: z.string({ required_error: "La ciudad es obligatoria." }).trim(),
   
   // CORREGIDO: Usamos el RUT como identificador primario del formulario de Vue
-  rut: z.string({ required_error: "El RUT nacional es obligatorio." }).trim(),
+  rut: z.string({ required_error: "El RUT nacional es obligatorio." })
+  .trim()
+  .refine((val)=> validarRutChileno(val),{
+    message: "El RUT ingresado no es valido (verifique el digito verificador)."
+  }),
   
   nombre: z.string({ required_error: "El nombre completo es obligatorio." }).trim(),
   fecha_nacimiento: z.string({ required_error: "La fecha de nacimiento es obligatoria." }),
