@@ -41,7 +41,7 @@ export const crearAtencionFichaNuevaSchema = z.object({
   centro_salud_id: z.string({ required_error: "El centro_salud_id es requerido." })
     .regex(/^[0-9a-fA-F]{24}$/, "El ID del centro de salud no válido."),
   
-  motivo_consulta: z.string({ required_error: "El motivo de consulta es obligatorio." }).min(10,"El motivo de consulta debe contener al menos 5 caracteres descriptivos.").trim(),
+  motivo_consulta: z.string({ required_error: "El motivo de consulta es obligatorio." }).min(10,"El motivo de consulta debe contener al menos 10 caracteres descriptivos.").trim(),
   
   codigo_enfermedad: z.string({ required_error: "El código CIE-10 es requerido." })
     .regex(/^[A-Z][0-9]{2}(\.[0-9])?$/, "El código debe cumplir con el formato internacional CIE-10 (Ej: M79.6)."),
