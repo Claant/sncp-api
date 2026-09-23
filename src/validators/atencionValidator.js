@@ -39,7 +39,7 @@ export const crearAtencionFichaNuevaSchema = z.object({
   rut: z.string({ required_error: "El RUT nacional es obligatorio." })
   .trim()
   .refine((val)=> validarRutChileno(val),{
-    message: "El RUT ingresado no es valido (verifique el digito verificador)."
+    message: "El RUT ingresado no es válido (debe tener entre 8 y 9 dígitos y terminar en un número o K)."
   }),
   
   nombre: z.string({ required_error: "El nombre completo es obligatorio." }).trim(),
