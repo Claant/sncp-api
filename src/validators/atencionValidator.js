@@ -5,6 +5,7 @@ import { z } from 'zod';
  * REGLA 1: Para consultas tradicionales de pacientes recurrentes (POST /)
  * Validada perimetralmente con la aduana genérica de Express
  */
+console.log("🔥 CARGANDO ZOD CON REGLA DE 10 CARACTERES - PORTO 4001");
 export const crearAtencionSchema = z.object({
   paciente_id: z.string({ required_error: "El identificador del paciente (paciente_id) es obligatorio." })
     .regex(/^[0-9a-fA-F]{24}$/, "El paciente_id provisto debe ser un ObjectId de MongoDB válido."),
