@@ -32,12 +32,14 @@ export const fusionarAtencionesExternas = async (pacienteLocalId, atencionesExte
 
     // Si la atención externa NO existe en el historial local, la importamos
     if (!fechasLocalesSet.has(timestampExt)) {
+      const nombreCentroRemoto = atenExt.nombre_centro || atenExt.centro_salud_nombre || "CESFAM Las Compañías";
       const nuevaAtencion = new AtencionMedicaProd({
-        paciente_id: pacienteLocalId,
-        usuario_id: idMedicoAutenticado,
-        fecha: atenExt.fecha || new Date(),
-        motivo_consulta: `[RED EXTERNA] ${atenExt.motivo_consulta || 'Consulta de Interoperabilidad'}`
-      });
+  paciente_id: pacienteLocalId,
+  usuario_id: idMedicoAutenticado,
+  fecha: atenExt.fecha || new Date(),
+  // Guardamos la procedencia y el establecimiento original en el motivo clínico
+  motivo_consulta: `[RED EXTERNA - ${nombreCentroRemoto}] ${atenExt.motivo_consulta || 'Consulta de Interoperabilidad'}`
+});
       await nuevaAtencion.save();
 
       // Si la atención externa incluye un diagnóstico CIE-10, se vincula
