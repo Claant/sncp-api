@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import * as dbConfig from "../config/db.js";
 import { construirFHIRBundle } from "../utils/fhirMapper.js";
+import { fusionarAtencionesExternas } from '../utils/syncHelper.js';
 
 /**
  * Limpia y empaqueta el RUT agregando el guion antes del dígito verificador (DV)
@@ -120,6 +121,40 @@ export const fusionarAtencionesExternas = async (pacienteLocalId, atencionesExte
   }
 
   return nuevosRegistros;
+};
+
+export const sincronizarAtenciones = async (req, res) => {
+  try {
+    const { paciente_id, atencionesExternas } = req.body;
+    const idMedicoAutenticado = req.usuario?._id;
+
+    if (!paciente_id || !Array.isArray(atencionesExternas) || atencionesExternas.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: "Se requiere el ID del paciente y la lista de atenciones externas."
+      });
+    }
+
+    // Invocamos TU función existente
+    const totalSincronizadas = await fusionarAtencionesExternas(
+      paciente_id,
+      atencionesExternas,
+      idMedicoAutenticado
+    );
+
+    return res.status(200).json({
+      ok: true,
+      msg: `Se integraron ${totalSincronizadas} atención(es) al expediente local.`,
+      sincronizadas: totalSincronizadas
+    });
+
+  } catch (error) {
+    console.error("❌ Error en sincronización asistida:", error.message);
+    return res.status(500).json({
+      ok: false,
+      msg: `Error interno al ejecutar la fusión: ${error.message}`
+    });
+  }
 };
 
 // Caso de Uso: Registrar un nuevo paciente (CU-002 / Registro)

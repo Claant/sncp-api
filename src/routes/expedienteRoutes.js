@@ -4,7 +4,8 @@ import {
   obtenerExpedientePorPaciente,
   agregarAtencion,
   obtenerExpedienteFHIR,
-  crearAtencionFichaNueva 
+  crearAtencionFichaNueva,
+   
 } from '../controllers/expedienteController.js';
 
 import { verificarToken } from '../middlewares/authMiddleware.js'; 
