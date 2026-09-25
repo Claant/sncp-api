@@ -1,17 +1,7 @@
 // controllers/pacienteController.js
 import mongoose from "mongoose";
-import * as dbConfig from "../config/db.js"; // CORRECCIÓN: Uso de getters dinámicos de ESM
-
-// IMPORTACIÓN ÚNICA DE ESQUEMAS CLÍNICOS: Previene el colapso del ModuleLoader en ESM
-import { pacienteSchema } from "../models/Paciente.js";
-import { expedienteSchema } from "../models/Expediente.js";
-import { direccionSchema } from "../models/Direccion.js";
-import { centroSaludSchema } from "../models/CentroSalud.js";
-import { atencionMedicaSchema } from "../models/AtencionMedica.js";
-import { diagnosticoSchema } from "../models/Diagnostico.js";
-import { bitacoraSchema } from "../models/BitacoraAcceso.js";
-import { usuarioSchema } from "../models/Usuario.js"; 
-import { construirFHIRBundle } from "../utils/fhirMapper.js"; // Función de interoperabilidad HL7 FHIR
+import * as dbConfig from "../config/db.js";
+import { construirFHIRBundle } from "../utils/fhirMapper.js";
 
 /**
  * Limpia y empaqueta el RUT agregando el guion antes del dígito verificador (DV)
@@ -20,7 +10,6 @@ import { construirFHIRBundle } from "../utils/fhirMapper.js"; // Función de int
 export const limpiarRut = (rutRaw) => {
   if (!rutRaw || typeof rutRaw !== 'string') return '';
   
-  // Extrae únicamente números y la letra K (mayúscula o minúscula)
   let limpio = rutRaw.replace(/[^0-9kK]/g, '').toUpperCase();
   if (limpio.length < 2) return limpio;
   
@@ -53,7 +42,7 @@ const registrarAccesoForense = async (usuarioId, nombreMedico, rolConsultado, pa
         const connProd = dbConfig.getConnProd();
         if (!connProd) throw new Error("Pool connProd no listo para auditoría.");
 
-        const BitacoraProd = connProd.models.BitacoraAcceso || connProd.model('BitacoraAcceso', bitacoraSchema, 'bitacora-accesos');
+        const BitacoraProd = connProd.model('BitacoraAcceso');
 
         await BitacoraProd.create({
             usuario_id: usuarioId || new mongoose.Types.ObjectId(),
@@ -69,6 +58,70 @@ const registrarAccesoForense = async (usuarioId, nombreMedico, rolConsultado, pa
     }
 };
 
+/**
+ * Reconcilia e integra atenciones y diagnósticos externos en un paciente local preexistente.
+ * Previene duplicados comparando las marcas de tiempo (fecha) de las consultas.
+ */
+export const fusionarAtencionesExternas = async (pacienteLocalId, atencionesExternas = [], idMedicoAutenticado) => {
+  if (!atencionesExternas || atencionesExternas.length === 0) return 0;
+
+  const connProd = dbConfig.getConnProd();
+  if (!connProd) throw new Error("Pool de producción no disponible para la sincronización.");
+
+  // OBTENCIÓN DIRECTA DE MODELOS PRECOMPILADOS (PUNTO 2)
+  const AtencionMedicaProd = connProd.model("AtencionMedica");
+  const DiagnosticoProd = connProd.model("Diagnostico");
+
+  // 1. Cargar marcas de tiempo de las atenciones locales registradas (.lean())
+  const atencionesLocales = await AtencionMedicaProd.find({ paciente_id: pacienteLocalId })
+    .select("fecha")
+    .lean();
+
+  const fechasLocalesSet = new Set(
+    atencionesLocales.map(a => new Date(a.fecha).getTime())
+  );
+
+  let nuevosRegistros = 0;
+
+  // 2. Iterar sobre las atenciones externas enviadas
+  for (const atenExt of atencionesExternas) {
+    const timestampExt = new Date(atenExt.fecha).getTime();
+
+    // Inyectar solo si la atención no figura en la base local
+    if (!fechasLocalesSet.has(timestampExt)) {
+      const nuevaAtencion = new AtencionMedicaProd({
+        paciente_id: pacienteLocalId,
+        usuario_id: idMedicoAutenticado,
+        fecha: atenExt.fecha || new Date(),
+        motivo_consulta: `[RED EXTERNA] ${atenExt.motivo_consulta || 'Consulta Importada'}`
+      });
+      await nuevaAtencion.save();
+
+      // Si incluye información de diagnóstico, registrarlo en la colección 'diagnosticos'
+      if (atenExt.diagnostico || atenExt.codigo_enfermedad) {
+        const codigo = atenExt.diagnostico?.codigo_enfermedad || atenExt.codigo_enfermedad || "Z00.0";
+        const descripcion = atenExt.diagnostico?.descripcion || atenExt.descripcion || "Diagnóstico importado desde red externa";
+
+        const nuevoDiagnostico = new DiagnosticoProd({
+          atencion_id: nuevaAtencion._id,
+          paciente_id: pacienteLocalId,
+          codigo_enfermedad: codigo.trim().toUpperCase(),
+          descripcion: descripcion.trim()
+        });
+        await nuevoDiagnostico.save();
+
+        nuevaAtencion.diagnostico_id = nuevoDiagnostico._id;
+        await nuevaAtencion.save();
+      }
+
+      fechasLocalesSet.add(timestampExt);
+      nuevosRegistros++;
+    }
+  }
+
+  return nuevosRegistros;
+};
+
 // Caso de Uso: Registrar un nuevo paciente (CU-002 / Registro)
 // POST /api/pacientes
 export const crearPaciente = async (req, res) => {
@@ -81,13 +134,14 @@ export const crearPaciente = async (req, res) => {
     try {
         const connProd = dbConfig.getConnProd();
         if (!connProd) {
-            return res.status(503).json({ error: "DbError", msg: "Base de datos sistema-informacion-clinica del CESFAM Emilio Schaffhauser no disponible temporalmente." });
+            return res.status(503).json({ error: "DbError", msg: "Base de datos sistema-informacion-clinica no disponible temporalmente." });
         }
 
-        const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
+        // OBTENCIÓN DIRECTA DE MODELOS PRECOMPILADOS (PUNTO 2)
+        const PacienteProd = connProd.model("Paciente");
 
         const rutSanitizado = limpiarRut(rut);
-        const pacienteExiste = await PacienteProd.findOne({ rut: rutSanitizado });
+        const pacienteExiste = await PacienteProd.findOne({ rut: rutSanitizado }).lean();
         if (pacienteExiste) {
             return res.status(400).json({ msg: 'El RUT de este paciente ya se encuentra registrado.' });
         }
@@ -109,13 +163,10 @@ export const crearPaciente = async (req, res) => {
     }
 };
 
-
 // ====================================================================
-// Caso de Uso Interoperable: Obtener Paciente por RUT (Conversión Híbrida local + externa)
+// Caso de Uso Interoperable: Obtener Paciente por RUT (Conversión Híbrida local + externa + Smart Merge)
 // GET /api/pacientes/:rut
 // ====================================================================
-
-
 export const obtenerPacientePorRut = async (req, res) => {
   const { rut } = req.params;
   try {
@@ -125,27 +176,55 @@ export const obtenerPacientePorRut = async (req, res) => {
       return res.status(503).json({ error: "DbError", msg: "Base de datos no inicializada para búsquedas clínicas." });
     }
     const rutSanitizado = limpiarRut(rut);
+    const idMedicoAutenticado = req.user?.id || req.user?._id || req.usuario?.id || req.usuario?._id;
 
-    // Enlace estricto de esquemas en el Pool de Producción Local
-    if (!connProd.models.Direccion) connProd.model("Direccion", direccionSchema, "direcciones");
-    if (!connProd.models.CentroSalud) connProd.model("CentroSalud", centroSaludSchema, "centro-salud");
-    if (!connProd.models.Usuario) connProd.model("Usuario", usuarioSchema, "usuarios");
-    if (!connProd.models.AtencionMedica) connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
-    if (!connProd.models.Diagnostico) connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
-    if (!connProd.models.BitacoraAcceso) connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
-
-    const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
-    const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
-    const DiagnosticoProd = connProd.models.Diagnostico || connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
+    // OBTENCIÓN DIRECTA DE MODELOS PRECOMPILADOS (PUNTO 2)
+    const PacienteProd = connProd.model("Paciente");
+    const AtencionMedicaProd = connProd.model("AtencionMedica");
+    const DiagnosticoProd = connProd.model("Diagnostico");
 
     // ----------------------------------------------------------------
     // NODO A: CONSULTAR BASE DE DATOS LOCAL
     // ----------------------------------------------------------------
     const pacienteLocal = await PacienteProd.findOne({ rut: rutSanitizado })
       .populate("direccion_id")
-      .populate("centro_salud_id");
+      .populate("centro_salud_id")
+      .lean();
 
     if (pacienteLocal) {
+      // 🔄 SMART MERGE: SI EXISTE EN AMBAS BASES DE DATOS, RECONCILIAR E IMPORTAR LO NUEVO
+      if (connDemo) {
+        try {
+          const PacienteDemo = connDemo.model("Paciente");
+          const AtencionMedicaDemo = connDemo.model("AtencionMedica");
+          const DiagnosticoDemo = connDemo.model("Diagnostico");
+
+          const pacienteExterno = await PacienteDemo.findOne({ rut: rutSanitizado }).lean();
+          if (pacienteExterno) {
+            const atencionesExt = await AtencionMedicaDemo.find({ paciente_id: pacienteExterno._id }).lean();
+            const diagnosticosExt = await DiagnosticoDemo.find({ atencion_id: { $in: atencionesExt.map(a => a._id) } }).lean();
+
+            const atencionesConDiagnostico = atencionesExt.map(aten => ({
+              ...aten,
+              diagnostico: diagnosticosExt.find(d => d.atencion_id.toString() === aten._id.toString())
+            }));
+
+            const importadas = await fusionarAtencionesExternas(
+              pacienteLocal._id,
+              atencionesConDiagnostico,
+              idMedicoAutenticado
+            );
+
+            if (importadas > 0) {
+              console.log(`✅ Smart Merge: Se integraron ${importadas} atenciones externas nuevas al expediente local de RUT: ${rutSanitizado}`);
+            }
+          }
+        } catch (errSync) {
+          console.warn("⚠️ Advertencia en Smart Merge (Continuando con lectura local):", errSync.message);
+        }
+      }
+
+      // Re-consultar atenciones locales (ahora unificadas con las recién importadas)
       const atencionesLocales = await AtencionMedicaProd.find({ paciente_id: pacienteLocal._id })
         .populate("usuario_id", "nombre especialidad rut")
         .sort({ fecha: -1 })
@@ -156,17 +235,16 @@ export const obtenerPacientePorRut = async (req, res) => {
       }).lean();
 
       // Cripto-auditoría forense centralizada OWASP
-      const idMedicoAutenticado = req.user?.id || req.user?._id || req.usuario?.id || req.usuario?._id;
       if (idMedicoAutenticado) {
         await registrarAccesoForense(idMedicoAutenticado, req.user?.nombre || req.usuario?.nombre, req.user?.rol || req.usuario?.rol, pacienteLocal._id);
       }
 
-      // 🔥 ¡CONVERSIÓN LOCAL A FHIR BUNDLE!
+      // 🔥 ¡CONVERSIÓN LOCAL UNIFICADA A FHIR BUNDLE!
       const fhirBundleLocal = construirFHIRBundle(pacienteLocal, atencionesLocales, diagnosticosLocales);
 
       return res.status(200).json({
         origen: "local",
-        msg: "Paciente local transformado exitosamente al estándar internacional HL7 FHIR.",
+        msg: "Paciente local unificado e integrado al estándar internacional HL7 FHIR.",
         fhirBundle: fhirBundleLocal
       });
     }
@@ -182,24 +260,21 @@ export const obtenerPacientePorRut = async (req, res) => {
       });
     }
 
-    const PacienteDemo = connDemo.models.Paciente || connDemo.model("Paciente", pacienteSchema, "pacientes");
-    if (!connDemo.models.AtencionMedica) connDemo.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
-    if (!connDemo.models.Diagnostico) connDemo.model("Diagnostico", diagnosticoSchema, "diagnosticos");
+    const PacienteDemo = connDemo.model("Paciente");
+    const AtencionMedicaDemo = connDemo.model("AtencionMedica");
+    const DiagnosticoDemo = connDemo.model("Diagnostico");
 
-    const AtencionMedicaDemo = connDemo.models.AtencionMedica;
-    const DiagnosticoDemo = connDemo.models.Diagnostico;
-
-    const pacienteExterno = await PacienteDemo.findOne({ rut: rutSanitizado });
+    const pacienteExterno = await PacienteDemo.findOne({ rut: rutSanitizado }).lean();
 
     if (!pacienteExterno) {
       return res.status(404).json({
         origen: "ninguno",
-        msg: "El RUT ingresado no mantiene registros en este CESFAM",
+        msg: "El RUT ingresado no mantiene registros en este CESFAM ni en la red externa.",
         fhirBundle: null
       });
     }
 
-    // Extraer historial del clúster remoto demo
+    // Extraer historial del clúster remoto demo con .lean()
     const atencionesExternas = await AtencionMedicaDemo.find({ paciente_id: pacienteExterno._id }).sort({ fecha: -1 }).lean();
     const diagnosticosExternas = await DiagnosticoDemo.find({ atencion_id: { $in: atencionesExternas.map(a => a._id) } }).lean();
 
@@ -208,7 +283,7 @@ export const obtenerPacientePorRut = async (req, res) => {
 
     return res.status(200).json({
       origen: "externo",
-      msg: "Ficha clínica externa desde la base de datos sistema-informacion-clinica-demo, transformado con exito al estándar HL7 FHIR.",
+      msg: "Ficha clínica externa desde la base de datos sistema-informacion-clinica-demo, transformada con éxito al estándar HL7 FHIR.",
       fhirBundle: fhirBundleExterno
     });
 
@@ -217,7 +292,6 @@ export const obtenerPacientePorRut = async (req, res) => {
     return res.status(500).json({ error: "InternalServerError", msg: "Conflicto de procesamiento interoperable." });
   }
 };
-
 
 // ====================================================================
 // Caso de Uso: Exportar Paciente en formato FHIR/JSON
@@ -230,18 +304,14 @@ export const obtenerPacienteFHIR = async (req, res) => {
             return res.status(503).json({ error: "DbError", msg: "Base de datos fuera de línea." });
         }
 
-        if (!connProd.models.Direccion) connProd.model("Direccion", direccionSchema, "direcciones");
-        if (!connProd.models.CentroSalud) connProd.model("CentroSalud", centroSaludSchema, "centro-salud");
-        if (!connProd.models.Usuario) connProd.model("Usuario", usuarioSchema, "usuarios");
-        // REEMPLAZO: Cambiamos la inyección condicional por la de bitácora
-        if (!connProd.models.BitacoraAcceso) connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
-        
-        const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
+        // OBTENCIÓN DIRECTA DE MODELOS PRECOMPILADOS (PUNTO 2)
+        const PacienteProd = connProd.model("Paciente");
         
         const rutSanitizado = limpiarRut(req.params.rut);
         const paciente = await PacienteProd.findOne({ rut: rutSanitizado })
             .populate('direccion_id')
-            .populate('centro_salud_id');
+            .populate('centro_salud_id')
+            .lean();
 
         if (!paciente) {
             return res.status(404).json({ msg: 'Paciente no encontrado.' });

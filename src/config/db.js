@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 
+// Importación de esquemas maestros
+import { atencionMedicaSchema } from '../models/AtencionMedica.js';
+import { direccionSchema } from '../models/Direccion.js';
+import { pacienteSchema } from '../models/Paciente.js';
+import { diagnosticoSchema } from '../models/Diagnostico.js';
+import { bitacoraSchema } from '../models/BitacoraAcceso.js';
+import { usuarioSchema } from '../models/Usuario.js';
+import { centroSaludSchema } from '../models/CentroSalud.js';
+
 // Usamos variables internas para mantener el estado real de la conexión
 let _connProd = null;
 let _connDemo = null;
@@ -7,6 +16,24 @@ let _connDemo = null;
 // CORRECCIÓN ENLACE ESM: Usamos getters para asegurar la exportación en vivo siempre actualizada
 export const getConnProd = () => _connProd;
 export const getConnDemo = () => _connDemo;
+
+
+// ====================================================================
+// PUNTO 2: COMPILACIÓN E INICIALIZACIÓN CENTRALIZADA DE MODELOS
+// Previene la reinstanciación en caliente durante cada petición HTTP
+// ====================================================================
+export const inicializarModelos = (conn) => {
+  if (!conn) return;
+  if (!conn.models.AtencionMedica) conn.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
+  if (!conn.models.Direccion) conn.model("Direccion", direccionSchema, "direcciones");
+  if (!conn.models.Paciente) conn.model("Paciente", pacienteSchema, "pacientes");
+  if (!conn.models.Diagnostico) conn.model("Diagnostico", diagnosticoSchema, "diagnosticos");
+  if (!conn.models.BitacoraAcceso) conn.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
+  if (!conn.models.Usuario) conn.model("Usuario", usuarioSchema, "usuarios");
+  if (!conn.models.CentroSalud) conn.model("CentroSalud", centroSaludSchema, "centro-salud");
+};
+
+
 
 const dbOptionsDefault = {
   maxPoolSize: 400,    // maximo 20 conexiones simultaneas    
@@ -22,6 +49,8 @@ export const connectDB = async () => {
     _connProd = mongoose.createConnection(process.env.MONGO_URI, dbOptionsDefault);
     
     await _connProd.asPromise();
+// ✅ INYECCIÓN CRÍTICA: Inicializa todos los modelos en la conexión de producción
+    inicializarModelos(_connProd);
     console.log('Conectado exitosamente a MongoDB Atlas (Pool Optimizado - Producción).');
 
     // Escuchadores de eventos para monitorear la salud
@@ -56,6 +85,8 @@ export const connectDemoDB = async () => {
     });
 
     await _connDemo.asPromise();
+    // ✅ INYECCIÓN EN DEMO (Agregado aquí también para mantener la consistencia)
+    inicializarModelos(_connDemo);
     console.log('Conectado exitosamente al cluster express (sistema-informacion-clinica-demo).');
 
     _connDemo.on('disconnected', () => {

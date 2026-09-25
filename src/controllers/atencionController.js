@@ -1,15 +1,7 @@
 // controllers/atencionController.js
 import mongoose from 'mongoose'; 
 import * as dbConfig from '../config/db.js'; // Pool dinámico mediante getters ESM
-
-// IMPORTACIÓN EXCLUSIVA DE ESQUEMAS CLÍNICOS: Previene el colapso del ModuleLoader en ESM
-import { atencionMedicaSchema } from '../models/AtencionMedica.js';
-import { direccionSchema } from '../models/Direccion.js';
-import { pacienteSchema } from '../models/Paciente.js';
-import { diagnosticoSchema } from '../models/Diagnostico.js';
-import { bitacoraSchema } from '../models/BitacoraAcceso.js'; // UNIFICADO: Esquema maestro definitivo
-import { usuarioSchema } from '../models/Usuario.js';
-import {construirFHIRBundle} from '../utils/fhirMapper.js';
+import { construirFHIRBundle } from '../utils/fhirMapper.js';
 
 // FUNCIÓN AUXILIAR MAESTRA: Asegura el formato de forma estricta (ej: 12345678-K)
 const limpiarRut = (rutRaw) => {
@@ -20,22 +12,6 @@ const limpiarRut = (rutRaw) => {
     const dv = limpio.slice(-1);
     return `${cuerpo}-${dv}`; 
 };
-
-// AUXILIAR DE COMPILACIÓN EN CALIENTE: Garantiza que los modelos apunten a la conexión activa
-const getModelosProd = (connProd) => {
-    const AtencionMedicaProd = connProd.models.AtencionMedica || connProd.model("AtencionMedica", atencionMedicaSchema, "atencion-medica");
-    const DiagnosticoProd = connProd.models.Diagnostico || connProd.model("Diagnostico", diagnosticoSchema, "diagnosticos");
-    const PacienteProd = connProd.models.Paciente || connProd.model("Paciente", pacienteSchema, "pacientes");
-    const DireccionProd = connProd.models.Direccion || connProd.model("Direccion", direccionSchema, "direcciones");
-    
-    // CORRECCIÓN CRÍTICA: Se inyecta el esquema maestro unificado para evitar fallas estructurales de campos obligatorios
-    const BitacoraAccesoProd = connProd.models.BitacoraAcceso || connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
-
-    if (!connProd.models.Usuario) connProd.model("Usuario", usuarioSchema, "usuarios");
-
-    return { AtencionMedicaProd, DiagnosticoProd, PacienteProd, DireccionProd, BitacoraAccesoProd };
-};
-
 
 // =========================================================================
 // Caso de Uso: Registrar una nueva consulta médica tradicional (CU-003)
@@ -55,7 +31,9 @@ export const crearAtencion = async (req, res) => {
       return res.status(503).json({ error: "DbError", msg: "Base de datos desconectada temporalmente." });
     }
 
-    const { AtencionMedicaProd, DiagnosticoProd } = getModelosProd(connProd);
+    // OBTENCIÓN DIRECTA DE MODELOS DESDE LA CONEXIÓN (PUNTO 2)
+    const AtencionMedicaProd = connProd.model("AtencionMedica");
+    const DiagnosticoProd = connProd.model("Diagnostico");
 
     // Resolver identidad del médico firmante de manera tolerante
     const idMedicoAutenticado = req.usuario?._id || req.user?._id || req.usuario?.id || req.user?.id || null;
@@ -83,9 +61,6 @@ export const crearAtencion = async (req, res) => {
     nuevaAtencion.diagnostico_id = nuevoDiagnostico._id;
     await nuevaAtencion.save();
 
-    // ARQUITECTURA DESACOPLADA: Se remueve la inserción síncrona redundante de BitacoraAccesoProd.
-    // La responsabilidad de la auditoría ahora recae al 100% en el controlador dedicado 'bitacoraController.js'.
-
     return res.status(201).json({
       msg: "Atención médica y diagnóstico registrados exitosamente en la base de datos.",
       atencion: nuevaAtencion,
@@ -102,12 +77,6 @@ export const crearAtencion = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 // =========================================================================
 // Caso de Uso Reestructurado: Obtener el historial local en formato HL7 FHIR
 // =========================================================================
@@ -121,15 +90,18 @@ export const obtenerHistorialPaciente = async (req, res) => {
         const connProd = dbConfig.getConnProd();
         if (!connProd) return res.status(503).json({ msg: "Base de datos desconectada temporalmente." });
         
-        const { AtencionMedicaProd, DiagnosticoProd, PacienteProd } = getModelosProd(connProd);
+        // OBTENCIÓN DIRECTA DE MODELOS DESDE LA CONEXIÓN (PUNTO 2)
+        const AtencionMedicaProd = connProd.model("AtencionMedica");
+        const DiagnosticoProd = connProd.model("Diagnostico");
+        const PacienteProd = connProd.model("Paciente");
 
-        // 1. Extraer los datos demográficos básicos del paciente local
+        // 1. Extraer los datos demográficos básicos del paciente local con .lean() (PUNTO 3)
         const pacienteLocal = await PacienteProd.findById(pacienteId).populate("direccion_id").lean();
         if (!pacienteLocal) {
             return res.status(404).json({ msg: "Paciente no registrado en la base de datos local (sistema-informacion-clinica) de este centro de salud" });
         }
 
-        // 2. Extraer el historial de consultas cronológicas locales de producción
+        // 2. Extraer el historial de consultas cronológicas locales con .lean() (PUNTO 3)
         const historialAtenciones = await AtencionMedicaProd.find({ paciente_id: pacienteId })
             .populate({
                 path: 'usuario_id',
@@ -138,14 +110,12 @@ export const obtenerHistorialPaciente = async (req, res) => {
             .sort({ fecha: -1 })
             .lean();
 
-        // 3. Extraer los diagnósticos locales amarrados a este bloque de atenciones
+        // 3. Extraer los diagnósticos locales amarrados a este bloque de atenciones con .lean() (PUNTO 3)
         const diagnosticosLocales = await DiagnosticoProd.find({
             atencion_id: { $in: historialAtenciones.map(a => a._id) }
         }).lean();
 
-        // ====================================================================
         // CAPA DE TRADUCCIÓN INTEROPERABLE: MONGO LOCAL JSON ➡️ HL7 FHIR BUNDLE
-        // ====================================================================
         const fhirBundleLocal = construirFHIRBundle(pacienteLocal, historialAtenciones, diagnosticosLocales);
 
         // 4. Retorno de Interoperabilidad Homologado
@@ -163,7 +133,6 @@ export const obtenerHistorialPaciente = async (req, res) => {
         });
     }
 };
-
 
 // =========================================================================
 // Caso de Uso: Registrar consulta completa con alta express (4 Form / Transacción ACID)
@@ -191,7 +160,12 @@ export const crearAtencionFichaNueva = async (req, res) => {
     try {
         session.startTransaction(); 
 
-        const { PacienteProd, DireccionProd, AtencionMedicaProd, DiagnosticoProd } = getModelosProd(connProd);
+        // OBTENCIÓN DIRECTA DE MODELOS DESDE LA CONEXIÓN (PUNTO 2)
+        const PacienteProd = connProd.model("Paciente");
+        const DireccionProd = connProd.model("Direccion");
+        const AtencionMedicaProd = connProd.model("AtencionMedica");
+        const DiagnosticoProd = connProd.model("Diagnostico");
+
         const rutSanitizado = limpiarRut(rut);
 
         const pacienteExiste = await PacienteProd.findOne({ rut: rutSanitizado }).session(session);
@@ -235,7 +209,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
         session.endSession();
 
         return res.status(201).json({
-            msg: 'Expediente clínico registrado con exito en la base de datos de este centro médico',
+            msg: 'Expediente clínico registrado con éxito en la base de datos de este centro médico',
             paciente_id: pacienteGuardado._id,
             atencion_id: atencionGuardada._id
         });
@@ -244,13 +218,18 @@ export const crearAtencionFichaNueva = async (req, res) => {
         const errorMsg = error?.message || '';
         console.warn('⚠️ Flujo transaccional interrumpido. Evaluando contingencia local...', errorMsg);
 
-        // EVALUACIÓN DE CONTINGENCIA SI EL MOTOR NO ADMITE TRANSACCIONES (Ej: Standalone local)
+        // EVALUACIÓN DE CONTINGENCIA SI EL MOTOR NO ADMITE TRANSACCIONES
         if (errorMsg.includes('transact') || errorMsg.includes('replica set') || errorMsg.includes('transaction') || errorMsg.includes('session')) {
             try {
                 try { await session.abortTransaction(); } catch (e) {}
                 session.endSession();
 
-                const { PacienteProd, DireccionProd, AtencionMedicaProd, DiagnosticoProd } = getModelosProd(connProd);
+                // OBTENCIÓN DIRECTA DE MODELOS
+                const PacienteProd = connProd.model("Paciente");
+                const DireccionProd = connProd.model("Direccion");
+                const AtencionMedicaProd = connProd.model("AtencionMedica");
+                const DiagnosticoProd = connProd.model("Diagnostico");
+
                 const rutSanitizado = limpiarRut(rut);
 
                 const pacienteExisteNormal = await PacienteProd.findOne({ rut: rutSanitizado });
@@ -284,7 +263,7 @@ export const crearAtencionFichaNueva = async (req, res) => {
                     descripcion
                 });
 
-               console.log('Contingencia local completada exitosamente en el Pool activo.');
+                console.log('Contingencia local completada exitosamente en el Pool activo.');
 
                 return res.status(201).json({
                     msg: 'Expediente clínico registrado exitosamente (Modo Resiliente Local).',
@@ -298,7 +277,6 @@ export const crearAtencionFichaNueva = async (req, res) => {
             }
         }
 
-        // Control de excepciones tradicional si el error original no era de entorno transaccional
         try {
             if (session.inTransaction()) {
                 await session.abortTransaction();

@@ -1,7 +1,6 @@
+// controllers/bitacoraController.js
 import mongoose from "mongoose";
 import * as dbConfig from "../config/db.js";
-import { bitacoraSchema } from "../models/BitacoraAcceso.js";
-import { usuarioSchema } from "../models/Usuario.js";
 
 // ====================================================================
 // CASO DE USO: REGISTRAR ACCESO FLUIDO E IDEMPOTENTE (OWASP / DEIS)
@@ -25,12 +24,11 @@ export const registrarAcceso = async (req, res) => {
       });
     }
 
-    // Enlace estricto de esquemas al pool activo de producción
-    const BitacoraProd = connProd.models.BitacoraAcceso || connProd.model("BitacoraAcceso", bitacoraSchema, "bitacora-accesos");
-    const UsuarioProd = connProd.models.Usuario || connProd.model("Usuario", usuarioSchema, "usuarios");
+    // OBTENCIÓN DIRECTA DE MODELOS PRECOMPILADOS EN db.js (PUNTO 2)
+    const BitacoraProd = connProd.model("BitacoraAcceso");
+    const UsuarioProd = connProd.model("Usuario");
 
     // 3. Extracción Segura de Identidad (Blindaje contra suplantación)
-    // Extraemos el ID directamente desde el token inyectado por el middleware, nunca desde el req.body
     const idMedicoAutenticado = req.user?.id || req.user?._id || req.usuario?.id || req.usuario?._id;
     if (!idMedicoAutenticado) {
       return res.status(401).json({ 
@@ -39,23 +37,21 @@ export const registrarAcceso = async (req, res) => {
     }
 
     // 4. MECANISMO DE CONTROL DE IDEMPOTENCIA POR VENTANA TEMPORAL
-    // Definimos un umbral de 60 segundos hacia atrás para atrapar ráfagas duplicadas del frontend
     const sesentaSegundosAtras = new Date(Date.now() - 60 * 1000);
     
     const filtroUnicidad = {
       paciente_id: new mongoose.Types.ObjectId(paciente_id),
       usuario_id: new mongoose.Types.ObjectId(idMedicoAutenticado),
-      fecha_consulta: { $gte: sesentaSegundosAtras } // Evalúa solo logs en el último minuto
+      fecha_consulta: { $gte: sesentaSegundosAtras }
     };
 
-    // Manejo estricto de atencion_id para evitar colisiones con el valor 'null' en MongoDB
     if (atencion_id && mongoose.Types.ObjectId.isValid(atencion_id)) {
       filtroUnicidad.atencion_id = new mongoose.Types.ObjectId(atencion_id);
     } else {
-      filtroUnicidad.atencion_id = null; // Búsqueda de acceso a la ficha demográfica general
+      filtroUnicidad.atencion_id = null;
     }
 
-    // Interceptar duplicados en ráfaga concurrente
+    // Interceptar duplicados en ráfaga concurrente con lectura rápida con .lean() (PUNTO 3)
     const accesoExistente = await BitacoraProd.findOne(filtroUnicidad).lean();
     if (accesoExistente) {
       console.log(`⚠️ Registro duplicado interceptado de forma segura en Atlas para el médico: ${idMedicoAutenticado}`);
@@ -64,7 +60,7 @@ export const registrarAcceso = async (req, res) => {
       });
     }
 
-    // 5. Resolución Analítica de Datos del Profesional (Para poblar el frontend)
+    // 5. Resolución Analítica de Datos del Profesional
     let nombreMedico = req.user?.nombre || req.usuario?.nombre || "Especialista de Turno";
     const medicoDB = await UsuarioProd.findById(idMedicoAutenticado).select("nombre").lean();
     if (medicoDB) {

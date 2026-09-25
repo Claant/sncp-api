@@ -1,6 +1,5 @@
-import mongoose from 'mongoose';
-import * as dbConfig from '../config/db.js'; // Cambiado para usar el getter dinámico
-import { usuarioSchema } from '../models/Usuario.js'; 
+// controllers/authController.js
+import * as dbConfig from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -14,7 +13,6 @@ export const login = async (req, res) => {
   }
 
   try {
-    // CORRECCIÓN: Extraemos el pool de conexiones en caliente usando el getter ESM
     const connProd = dbConfig.getConnProd();
 
     if (!connProd) {
@@ -22,8 +20,8 @@ export const login = async (req, res) => {
       return res.status(503).json({ msg: "Servicio de autenticación no disponible temporalmente." });
     }
 
-    // Instanciamos el modelo amarrándolo de forma estricta a connProd
-    const UsuarioProd = connProd.models.Usuario || connProd.model('Usuario', usuarioSchema, 'usuarios');
+    // OBTENCIÓN DIRECTA DEL MODELO PRECOMPILADO EN db.js (PUNTO 2)
+    const UsuarioProd = connProd.model('Usuario');
 
     // Buscar usuario por email en el pool correcto de producción
     const usuario = await UsuarioProd.findOne({ correo: correo.toLowerCase().trim() });
@@ -49,7 +47,6 @@ export const login = async (req, res) => {
         rol: usuario.rol   
     };
 
-    // CORRECCIÓN: Firmar el Token de forma asíncrona lineal con promesas (Evita desvíos en el try/catch)
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
 
     // Responder al frontend con el token y datos básicos del perfil
