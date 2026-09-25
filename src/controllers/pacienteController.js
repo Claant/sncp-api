@@ -190,64 +190,59 @@ export const obtenerPacientePorRut = async (req, res) => {
       .populate("direccion_id")
       .populate("centro_salud_id")
       .lean();
+// controllers/pacienteController.js (Fragmento en obtenerPacientePorRut)
+if (pacienteLocal) {
+  let atencionesNuevasExternasCount = 0;
+  let atencionesRemotasParaFusion = [];
 
-    if (pacienteLocal) {
-      // 🔄 SMART MERGE: SI EXISTE EN AMBAS BASES DE DATOS, RECONCILIAR E IMPORTAR LO NUEVO
-      if (connDemo) {
-        try {
-          const PacienteDemo = connDemo.model("Paciente");
-          const AtencionMedicaDemo = connDemo.model("AtencionMedica");
-          const DiagnosticoDemo = connDemo.model("Diagnostico");
+  if (connDemo) {
+    const PacienteDemo = connDemo.model("Paciente");
+    const AtencionMedicaDemo = connDemo.model("AtencionMedica");
+    const DiagnosticoDemo = connDemo.model("Diagnostico");
 
-          const pacienteExterno = await PacienteDemo.findOne({ rut: rutSanitizado }).lean();
-          if (pacienteExterno) {
-            const atencionesExt = await AtencionMedicaDemo.find({ paciente_id: pacienteExterno._id }).lean();
-            const diagnosticosExt = await DiagnosticoDemo.find({ atencion_id: { $in: atencionesExt.map(a => a._id) } }).lean();
+    const pacienteExterno = await PacienteDemo.findOne({ rut: rutSanitizado }).lean();
+    if (pacienteExterno) {
+      const atencionesExt = await AtencionMedicaDemo.find({ paciente_id: pacienteExterno._id }).lean();
+      const diagnosticosExt = await DiagnosticoDemo.find({ atencion_id: { $in: atencionesExt.map(a => a._id) } }).lean();
 
-            const atencionesConDiagnostico = atencionesExt.map(aten => ({
-              ...aten,
-              diagnostico: diagnosticosExt.find(d => d.atencion_id.toString() === aten._id.toString())
-            }));
+      // Cargar fechas locales para verificar si hay novedades sin guardar
+      const AtencionMedicaProd = connProd.model("AtencionMedica");
+      const atencionesLocales = await AtencionMedicaProd.find({ paciente_id: pacienteLocal._id }).select("fecha").lean();
+      const fechasSet = new Set(atencionesLocales.map(a => new Date(a.fecha).getTime()));
 
-            const importadas = await fusionarAtencionesExternas(
-              pacienteLocal._id,
-              atencionesConDiagnostico,
-              idMedicoAutenticado
-            );
+      atencionesRemotasParaFusion = atencionesExt.filter(a => !fechasSet.has(new Date(a.fecha).getTime())).map(aten => ({
+        ...aten,
+        diagnostico: diagnosticosExt.find(d => d.atencion_id.toString() === aten._id.toString())
+      }));
 
-            if (importadas > 0) {
-              console.log(`✅ Smart Merge: Se integraron ${importadas} atenciones externas nuevas al expediente local de RUT: ${rutSanitizado}`);
-            }
-          }
-        } catch (errSync) {
-          console.warn("⚠️ Advertencia en Smart Merge (Continuando con lectura local):", errSync.message);
-        }
-      }
-
-      // Re-consultar atenciones locales (ahora unificadas con las recién importadas)
-      const atencionesLocales = await AtencionMedicaProd.find({ paciente_id: pacienteLocal._id })
-        .populate("usuario_id", "nombre especialidad rut")
-        .sort({ fecha: -1 })
-        .lean();
-
-      const diagnosticosLocales = await DiagnosticoProd.find({
-        atencion_id: { $in: atencionesLocales.map(a => a._id) }
-      }).lean();
-
-      // Cripto-auditoría forense centralizada OWASP
-      if (idMedicoAutenticado) {
-        await registrarAccesoForense(idMedicoAutenticado, req.user?.nombre || req.usuario?.nombre, req.user?.rol || req.usuario?.rol, pacienteLocal._id);
-      }
-
-      // 🔥 ¡CONVERSIÓN LOCAL UNIFICADA A FHIR BUNDLE!
-      const fhirBundleLocal = construirFHIRBundle(pacienteLocal, atencionesLocales, diagnosticosLocales);
-
-      return res.status(200).json({
-        origen: "local",
-        msg: "Paciente local unificado e integrado al estándar internacional HL7 FHIR.",
-        fhirBundle: fhirBundleLocal
-      });
+      atencionesNuevasExternasCount = atencionesRemotasParaFusion.length;
     }
+  }
+
+  // Cargar atenciones locales actuales
+  const atencionesLocales = await AtencionMedicaProd.find({ paciente_id: pacienteLocal._id })
+    .populate("usuario_id", "nombre especialidad rut")
+    .sort({ fecha: -1 })
+    .lean();
+
+  const diagnosticosLocales = await DiagnosticoProd.find({
+    atencion_id: { $in: atencionesLocales.map(a => a._id) }
+  }).lean();
+
+  const fhirBundleLocal = construirFHIRBundle(pacienteLocal, atencionesLocales, diagnosticosLocales);
+
+  return res.status(200).json({
+    origen: atencionesNuevasExternasCount > 0 ? "local_con_pendientes" : "local",
+    msg: atencionesNuevasExternasCount > 0 
+      ? `Se hallaron ${atencionesNuevasExternasCount} atenciones clínicas nuevas en el centro externo.`
+      : "Paciente local cargado.",
+    atencionesPendientes: atencionesRemotasParaFusion,
+    fhirBundle: fhirBundleLocal
+  });
+}
+
+
+
 
     // ----------------------------------------------------------------
     // NODO B: CONMUTACIÓN AL CLÚSTER REMOTO EXTERNO (DEMO ATLAS)
