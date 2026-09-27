@@ -16,7 +16,7 @@ export const usuarioSchema = new mongoose.Schema({
   correo: {
     type: String,
     required: true,
-    unique: true,
+    unique: true,  // no se puede repetir
     trim: true,
     lowercase: true
   },
@@ -39,7 +39,7 @@ export const usuarioSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true,   // ya basta con esto
+    unique: true,     // no se puede repetir
     trim: true
   },
   password: {

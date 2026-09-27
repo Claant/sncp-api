@@ -16,12 +16,13 @@ export const pacienteSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { 
+  {
     timestamps: true,
-    versionKey: false
+    versionKey: false,
   },
 );
 
-
-const Paciente = mongoose.models.Paciente || mongoose.model("Paciente", pacienteSchema, "pacientes");
+const Paciente =
+  mongoose.models.Paciente ||
+  mongoose.model("Paciente", pacienteSchema, "pacientes");
 export default Paciente;
